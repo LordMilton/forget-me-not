@@ -1,4 +1,4 @@
-package com.example.everydaytodolist.ui.components
+package com.example.everydaytodolist.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

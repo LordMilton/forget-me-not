@@ -5,9 +5,9 @@ import java.time.LocalTime
 import java.util.Date
 
 class Todo(
-    var title: String,
-    var frequencyInDays: Int,
-    var alarmTime: LocalTime
+    var title: String = "New Todo", //TODO Get this into a string resource
+    var frequencyInDays: Int = 1,
+    var alarmTime: LocalTime = LocalTime.of(9,0)
 ) {
 
     val calendar: Calendar = Calendar.getInstance()

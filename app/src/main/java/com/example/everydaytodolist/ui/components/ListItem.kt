@@ -21,7 +21,12 @@ import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.time.LocalTime
 
 @Composable
-fun ListItem(data: Todo, modifier: Modifier = Modifier) {
+fun ListItem(
+    data: Todo,
+    onEditClicked: () -> Unit,
+    onDeleteClicked: () -> Unit,
+    modifier: Modifier = Modifier)
+{
     Row(modifier) {
         Column(
             Modifier.weight(.75f)
@@ -64,7 +69,7 @@ fun ListItemPreview() {
 
     EverydayToDoListTheme {
         Scaffold() { innerPadding ->
-            ListItem(sampleData, Modifier.padding(innerPadding).fillMaxSize())
+            ListItem(sampleData, {}, {}, Modifier.padding(innerPadding).fillMaxSize())
         }
     }
 }
