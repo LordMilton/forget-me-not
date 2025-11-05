@@ -42,48 +42,60 @@ class MainActivity : ComponentActivity() {
                 val onTodoDeleteClicked: (Int) -> Unit = { todoId: Int ->
                     todoList.removeAt(todoId)
                 }
-                val todoListView = TodoList(
+                val todoListView: @Composable () -> Unit = { TodoList(
                     todoList,
                     onNewTodoRequested,
                     onTodoEditClicked,
                     onTodoDeleteClicked
-                )
+                ) }
 
-                NavHost(
-                    navController = navController,
-                    startDestination = "list_view",
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    composable(route = "list_view") {
-                        todoListView
-                    }
-                    composable(
-                        route = "editor_view?todoItem",
-                        arguments = listOf(
-                            navArgument("todoItem") {
-                                NavType.IntType
-                                nullable = true
+                Scaffold() { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = "list_view",
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable(route = "list_view") {
+                            todoListView()
+                        }
+                        composable(
+                            route = "editor_view?todoItem",
+                            arguments = listOf(
+                                navArgument("todoItem") {
+                                    NavType.IntType
+                                    defaultValue = -1
+                                }
+                            )
+                        ) { curBackStackEntry ->
+                            val arguments = curBackStackEntry.arguments
+                            val todoId = arguments?.getInt("todoItem") ?: -2
+                            when (todoId) {
+                                -1 ->
+                                    EditTaskComposable(
+                                        Todo(),
+                                        {
+                                            todoList.add(it)
+                                            navController.navigate("list_view")
+                                        },
+                                        onCancel = {
+                                            navController.navigate("list_view")
+                                        }
+                                    )
+
+                                in 0..(todoList.size - 1) ->
+                                    EditTaskComposable(
+                                        todoList[todoId],
+                                        {
+                                            todoList[todoId] = it
+                                            navController.navigate("list_view")
+                                        },
+                                        onCancel = {
+                                            navController.navigate("list_view")
+                                        }
+                                    )
+
+                                else -> todoListView() //TODO Indicate to the user that something went wrong
                             }
-                        )
-                    ) { curBackStackEntry ->
-                        val arguments = curBackStackEntry.arguments
-                        val todoId = arguments?.getInt("todoItem")
-                        when(todoId) {
-                            null ->
-                                EditTaskComposable(
-                                Todo(),
-                                {
-                                        todoList.add(it)
-                                    }
-                                )
-                            in 0..(todoList.size-1) ->
-                                EditTaskComposable(
-                                    todoList[todoId],
-                                    {
-                                        todoList[todoId] = it
-                                    }
-                                )
-                            else -> todoListView //TODO Indicate to the user that something went wrong
                         }
                     }
                 }

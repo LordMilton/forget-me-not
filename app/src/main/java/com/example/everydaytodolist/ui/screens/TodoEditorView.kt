@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter
 fun EditTaskComposable(
     data: Todo,
     onSave: (Todo) -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var taskName by remember { mutableStateOf(data.title) }
@@ -108,7 +109,7 @@ fun EditTaskComposable(
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(
-                onClick = { onSave(data) },
+                onClick = onCancel,
                 Modifier.padding(end = 8.dp)
             ) {
                 Text(
@@ -169,7 +170,8 @@ fun EditTaskComposablePreview() {
         Surface {
             EditTaskComposable(
                 data = data,
-                onSave = { }
+                {},
+                {}
             )
         }
     }
