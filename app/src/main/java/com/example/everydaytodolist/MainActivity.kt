@@ -1,18 +1,15 @@
 package com.example.everydaytodolist
 
 import android.os.Bundle
-import android.widget.ListView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -32,12 +29,12 @@ class MainActivity : ComponentActivity() {
             EverydayToDoListTheme {
                 val navController = rememberNavController()
 
-                val todoList = remember { mutableListOf<Todo>() }
+                val todoList = remember { mutableStateListOf<Todo>() }
                 val onNewTodoRequested = {
                     navController.navigate("editor_view")
                 }
                 val onTodoEditClicked = { todoId: Int ->
-                    navController.navigate("editorView?${todoId}")
+                    navController.navigate("editor_view?todoId=${todoId}")
                 }
                 val onTodoDeleteClicked: (Int) -> Unit = { todoId: Int ->
                     todoList.removeAt(todoId)
@@ -59,16 +56,16 @@ class MainActivity : ComponentActivity() {
                             todoListView()
                         }
                         composable(
-                            route = "editor_view?todoItem",
+                            route = "editor_view?todoId={todoId}",
                             arguments = listOf(
-                                navArgument("todoItem") {
+                                navArgument("todoId") {
                                     NavType.IntType
                                     defaultValue = -1
                                 }
                             )
                         ) { curBackStackEntry ->
                             val arguments = curBackStackEntry.arguments
-                            val todoId = arguments?.getInt("todoItem") ?: -2
+                            val todoId = arguments?.getInt("todoId") ?: -2
                             when (todoId) {
                                 -1 ->
                                     EditTaskComposable(

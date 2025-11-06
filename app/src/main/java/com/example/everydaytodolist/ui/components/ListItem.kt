@@ -49,12 +49,12 @@ fun ListItem(
             Modifier.weight(.25f)
         ) {
             Button(
-                {}
+                onEditClicked
             ) {
                 Text("Edit")
             }
             Button(
-                {}
+                onDeleteClicked
             ) {
                 Text("Delete")
             }
