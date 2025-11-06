@@ -1,6 +1,9 @@
 package com.example.everydaytodolist.ui.screens
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -12,6 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -60,22 +66,37 @@ fun EditTaskComposable(
         OutlinedTextField(
             value = "$frequency",
             onValueChange = { frequency = it.toIntOrNull() ?: 1 },
+            placeholder = { Text("1") },
             label = { Text("Frequency") },
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
             modifier = Modifier
                 .fillMaxWidth()
         )
 
-        // Alarm Time Selection
-        OutlinedTextField(
-            value = alarmTime.format(DateTimeFormatter.ofPattern("HH:mm")),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Time") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showTimePicker = true }
-        )
+        Box() {
+            // Alarm Time Selection
+            OutlinedTextField(
+                value = alarmTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Time") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerInput(Unit) {
+                        // https://stackoverflow.com/questions/67902919/jetpack-compose-textfield-clickable-does-not-work/79721039#79721039
+                        awaitEachGesture {
+                            // Modifier.clickable doesn't work for text fields, so we use Modifier.pointerInput
+                            // to look for the down->up event in the Initial pass before the text field consumes them
+                            // in the Main pass.
+                            awaitFirstDown(pass = PointerEventPass.Initial)
+                            val upEvent = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                            if (upEvent != null) {
+                                showTimePicker = true
+                            }
+                        }
+                    }
+            )
+        }
 
         if (showTimePicker) {
             TimePickerDialog(
