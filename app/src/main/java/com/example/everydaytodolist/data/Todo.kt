@@ -15,11 +15,16 @@ class Todo(
         private set(value) {
             field = value
         }
+    var timesSnoozedSinceLastCompletion: Int = 0
+        private set(value) {
+            field = value
+        }
 
     companion object Factory {
         fun copy(other: Todo): Todo {
             var todoCopy = Todo(other.title, other.frequencyInDays, other.alarmTime)
             todoCopy.lastOccurrence = other.lastOccurrence
+            todoCopy.timesSnoozedSinceLastCompletion = other.timesSnoozedSinceLastCompletion
             return todoCopy
         }
     }
