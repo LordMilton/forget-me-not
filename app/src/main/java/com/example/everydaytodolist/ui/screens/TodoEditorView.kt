@@ -1,10 +1,12 @@
 package com.example.everydaytodolist.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -19,6 +21,8 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.everydaytodolist.data.Todo
@@ -59,19 +63,32 @@ fun EditTaskComposable(
             value = taskName,
             onValueChange = { taskName = it },
             label = { Text("Task Name") },
+            textStyle = MaterialTheme.typography.titleMedium,
             modifier = Modifier.fillMaxWidth()
         )
 
         // Frequency Selection
-        OutlinedTextField(
-            value = "$frequency",
-            onValueChange = { frequency = it.toIntOrNull() ?: 1 },
-            placeholder = { Text("1") },
-            label = { Text("Frequency") },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-            modifier = Modifier
-                .fillMaxWidth()
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Every",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            OutlinedTextField(
+                value = "$frequency",
+                onValueChange = { frequency = it.toIntOrNull() ?: 1 },
+                suffix = { Text(
+                    "Days",
+                    style = MaterialTheme.typography.bodyLarge
+                ) },
+                label = { Text("Frequency") },
+                textStyle = MaterialTheme.typography.titleMedium,
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                modifier = Modifier
+            )
+        }
 
         Box() {
             // Alarm Time Selection
@@ -80,6 +97,7 @@ fun EditTaskComposable(
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Time") },
+                textStyle = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .fillMaxWidth()
                     .pointerInput(Unit) {
@@ -185,14 +203,17 @@ fun EditTaskComposablePreview() {
     var taskName by remember { mutableStateOf("Do Laundry") }
     var frequency by remember { mutableIntStateOf(1) }
     var time by remember { mutableStateOf(LocalTime.of(18, 0)) }
-    val data: Todo = Todo(taskName, frequency, time)
+    val data = Todo(taskName, frequency, time)
 
     EverydayToDoListTheme {
-        Surface {
+        Surface(
+            Modifier.background(color = MaterialTheme.colorScheme.background)
+        ) {
             EditTaskComposable(
                 data = data,
                 {},
-                {}
+                {},
+                Modifier
             )
         }
     }
