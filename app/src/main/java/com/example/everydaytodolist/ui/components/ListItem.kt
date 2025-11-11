@@ -1,5 +1,7 @@
 package com.example.everydaytodolist.ui.components
 
+import android.icu.text.DateFormat
+import android.icu.util.Calendar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,28 +58,34 @@ fun ListItem(
                     .weight(.75f)
                     .padding(8.dp)
             ) {
+                val titleString = data.title
+                val frequencyString = when (data.frequencyInDays)
+                    {
+                        1 -> stringResource(R.string.frequency_one_day)
+                        else -> stringResource(
+                            R.string.frequency_multiple_days,
+                            data.frequencyInDays
+                        )
+                    }
+                val nextOccurrenceString = DateFormat.getPatternInstance(DateFormat.MONTH_DAY).format(data.getNextOccurrenceTime())
+                
                 Text(
-                    data.title,
+                    titleString,
                     color = MaterialTheme.colorScheme.onPrimary,
                     style = titleTextStyle,
                     maxLines = 2,
                     modifier = Modifier
                 )
                 Text(
-                    text = when (data.frequencyInDays) {
-                        1 -> stringResource(R.string.frequency_one_day)
-                        else -> stringResource(
-                            R.string.frequency_multiple_days,
-                            data.frequencyInDays
-                        )
-                    },
+                    text = frequencyString,
                     color = MaterialTheme.colorScheme.onPrimary,
                     style = bodyTextStyle
                 )
+
                 Text(
-                    "Next occurrence...",
+                    "Next occurrence on $nextOccurrenceString",
                     color = MaterialTheme.colorScheme.onPrimary,
-                    style = bodyTextStyle
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
             Column(
@@ -103,7 +111,7 @@ fun ListItem(
                         .fillMaxWidth()
                 ) {
                     Text(
-                        "Delete",
+                        "Delete", //TODO Fix issue with this text trying to be on two lines
                         style = buttonTextStyle,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         maxLines = 1,
