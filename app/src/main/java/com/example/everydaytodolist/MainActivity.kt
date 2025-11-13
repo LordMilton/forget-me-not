@@ -41,11 +41,24 @@ class MainActivity : ComponentActivity() {
                 val onTodoDeleteClicked: (Int) -> Unit = { todoId: Int ->
                     todoList.removeAt(todoId)
                 }
+                val onTodoCompletedClicked: (Int) -> Unit = { todoId: Int ->
+                    val todo = todoList.removeAt(todoId)
+                    todo.markCompleted()
+                    todoList.add(todoId, todo)
+                }
+                val onTodoSnoozedClicked: (Int, Int?) -> Unit =
+                    { todoId: Int, snoozeLength: Int? ->
+                        val todo = todoList.removeAt(todoId)
+                        todo.snooze(snoozeLength ?: 1)
+                        todoList.add(todoId, todo)
+                    }
                 val todoListView: @Composable () -> Unit = { TodoList(
                     todoList,
                     onNewTodoRequested,
                     onTodoEditClicked,
-                    onTodoDeleteClicked
+                    onTodoDeleteClicked,
+                    onTodoCompletedClicked,
+                    onTodoSnoozedClicked
                 ) }
 
                 Scaffold(

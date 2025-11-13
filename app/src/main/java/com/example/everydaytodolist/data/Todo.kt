@@ -30,9 +30,9 @@ class Todo(
         nextOccurrence = calculateNextOccurrence()
     }
 
-    fun snooze() {
+    fun snooze(snoozeLength: Int = 1) {
         timesSnoozedSinceLastCompletion++
-        nextOccurrence = calculateNextOccurrence(snoozeLength = 1)
+        nextOccurrence = calculateNextOccurrence(snoozeLength = snoozeLength)
     }
 
     private fun calculateNextOccurrence(

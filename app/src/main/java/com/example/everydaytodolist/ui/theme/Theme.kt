@@ -10,12 +10,19 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import com.example.everydaytodolist.ui.theme.AppTypography
 
+@Immutable
+data class ExtendedColorScheme(
+    val snoozed: com.example.everydaytodolist.ui.theme.ColorFamily,
+    val oversnoozed: com.example.everydaytodolist.ui.theme.ColorFamily,
+)
 private val lightScheme = lightColorScheme(
     primary = primaryLight,
     onPrimary = onPrimaryLight,
@@ -244,6 +251,100 @@ private val highContrastDarkColorScheme = darkColorScheme(
     surfaceContainerHighest = surfaceContainerHighestDarkHighContrast,
 )
 
+val extendedLight = ExtendedColorScheme(
+    snoozed = ColorFamily(
+        snoozedLight,
+        onSnoozedLight,
+        snoozedContainerLight,
+        onSnoozedContainerLight
+    ),
+    oversnoozed = ColorFamily(
+        oversnoozedLight,
+        onOversnoozedLight,
+        oversnoozedContainerLight,
+        onOversnoozedContainerLight,
+    ),
+)
+
+val extendedDark = ExtendedColorScheme(
+    snoozed = ColorFamily(
+        snoozedDark,
+        onSnoozedDark,
+        snoozedContainerDark,
+        onSnoozedContainerDark
+    ),
+    oversnoozed = ColorFamily(
+        oversnoozedDark,
+        onOversnoozedDark,
+        oversnoozedContainerDark,
+        onOversnoozedContainerDark,
+    ),
+)
+
+val extendedLightMediumContrast = ExtendedColorScheme(
+    snoozed = ColorFamily(
+        snoozedLightMediumContrast,
+        onSnoozedLightMediumContrast,
+        snoozedContainerLightMediumContrast,
+        onSnoozedContainerLightMediumContrast
+    ),
+    oversnoozed = ColorFamily(
+        oversnoozedLightMediumContrast,
+        onOversnoozedLightMediumContrast,
+        oversnoozedContainerLightMediumContrast,
+        onOversnoozedContainerLightMediumContrast,
+    ),
+)
+
+val extendedLightHighContrast = ExtendedColorScheme(
+    snoozed = ColorFamily(
+        snoozedLightHighContrast,
+        onSnoozedLightHighContrast,
+        snoozedContainerLightHighContrast,
+        onSnoozedContainerLightHighContrast
+    ),
+    oversnoozed = ColorFamily(
+        oversnoozedLightHighContrast,
+        onOversnoozedLightHighContrast,
+        oversnoozedContainerLightHighContrast,
+        onOversnoozedContainerLightHighContrast,
+    ),
+)
+
+val extendedDarkMediumContrast = ExtendedColorScheme(
+    snoozed = ColorFamily(
+        snoozedDarkMediumContrast,
+        onSnoozedDarkMediumContrast,
+        snoozedContainerDarkMediumContrast,
+        onSnoozedContainerDarkMediumContrast
+    ),
+    oversnoozed = ColorFamily(
+        oversnoozedDarkMediumContrast,
+        onOversnoozedDarkMediumContrast,
+        oversnoozedContainerDarkMediumContrast,
+        onOversnoozedContainerDarkMediumContrast,
+    ),
+)
+
+val extendedDarkHighContrast = ExtendedColorScheme(
+    snoozed = ColorFamily(
+        snoozedDarkHighContrast,
+        onSnoozedDarkHighContrast,
+        snoozedContainerDarkHighContrast,
+        onSnoozedContainerDarkHighContrast
+    ),
+    oversnoozed = ColorFamily(
+        oversnoozedDarkHighContrast,
+        onOversnoozedDarkHighContrast,
+        oversnoozedContainerDarkHighContrast,
+        onOversnoozedContainerDarkHighContrast,
+    ),
+)
+
+val LocalExtendedColors = staticCompositionLocalOf {
+    extendedLight
+}
+
 @Immutable
 data class ColorFamily(
     val color: Color,
@@ -263,20 +364,31 @@ fun EverydayToDoListTheme(
     dynamicColor: Boolean = true,
     content: @Composable() () -> Unit
 ) {
-  val colorScheme = when {
-      dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-          val context = LocalContext.current
-          if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-      }
-      
-      darkTheme -> darkScheme
-      else -> lightScheme
-  }
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
 
-  MaterialTheme(
-    colorScheme = colorScheme,
-    typography = AppTypography,
-    content = content
-  )
+        darkTheme -> darkScheme
+        else -> lightScheme
+    }
+    val extendedColorScheme = when {
+        darkTheme -> extendedDark
+        else -> extendedLight
+    }
+
+    CompositionLocalProvider(LocalExtendedColors.provides(extendedColorScheme)) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = AppTypography,
+            content = content
+        )
+    }
 }
 
+object ExtendedTheme {
+    val colorScheme: ExtendedColorScheme
+        @Composable
+        get() = LocalExtendedColors.current
+}

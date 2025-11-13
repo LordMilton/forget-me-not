@@ -1,8 +1,5 @@
 package com.example.everydaytodolist.ui.screens
 
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.rememberScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,18 +9,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.everydaytodolist.data.Todo
@@ -37,6 +29,8 @@ fun TodoList(
     onFabClicked: () -> Unit,
     onItemEditClicked: (Int) -> Unit,
     onItemDeleteClicked: (Int) -> Unit,
+    onItemCompletedClicked: (Int) -> Unit,
+    onItemSnoozeClicked: (Int, Int?) -> Unit,
     modifier: Modifier = Modifier)
 {
     Box(modifier.fillMaxSize()) {
@@ -48,6 +42,8 @@ fun TodoList(
                     todo,
                     { onItemEditClicked(i) },
                     { onItemDeleteClicked(i) },
+                    { onItemCompletedClicked(i) },
+                    { onItemSnoozeClicked(i, it) },
                     Modifier.padding(8.dp)
                 )
             }
@@ -73,15 +69,30 @@ fun TodoList(
 @Preview
 @Composable
 fun TodoListPreview() {
+    val todo1 = Todo("Clean Dishes", 2, LocalTime.of(20, 0))
+    todo1.snooze()
+    val todo2 = Todo("Do Laundry", 7, LocalTime.of(12, 0))
+    val todo3 = Todo("Brush Teeth", 1, LocalTime.of(9, 0))
+    todo3.snooze()
+    todo3.snooze()
+    todo3.snooze()
+
     val exampleData = listOf(
-        Todo("Clean Dishes", 2, LocalTime.of(20, 0)),
-        Todo("Do Laundry", 7, LocalTime.of(12, 0)),
-        Todo("Brush Teeth", 1, LocalTime.of(9, 0))
+        todo1,
+        todo2,
+        todo3
     )
 
     EverydayToDoListTheme {
         Scaffold { innerPadding ->
-            TodoList(exampleData, {}, {}, {}, Modifier.padding(innerPadding))
+            TodoList(exampleData,
+                {},
+                {},
+                {},
+                {},
+                { one, two -> },
+                Modifier.padding(innerPadding)
+            )
         }
     }
 }
