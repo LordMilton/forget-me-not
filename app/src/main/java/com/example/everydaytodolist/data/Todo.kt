@@ -10,7 +10,7 @@ class Todo(
     var frequencyInDays: Int = 1,
     var alarmTime: LocalTime = LocalTime.of(9,0)
 ) {
-    private var nextOccurrence: Calendar = calculateNextOccurrence()
+    private var nextOccurrence: Calendar = calculateNextOccurrence(from = Calendar.getInstance())
     private var lastOccurrence: Calendar = Calendar.getInstance()
     var timesSnoozedSinceLastCompletion: Int = 0
         private set(value) {
@@ -36,7 +36,7 @@ class Todo(
     }
 
     private fun calculateNextOccurrence(
-        from: Calendar = Calendar.getInstance(),
+        from: Calendar = nextOccurrence,
         snoozeLength: Int = frequencyInDays
     ): Calendar {
         val calendar = from
