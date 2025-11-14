@@ -1,6 +1,6 @@
 package com.example.everydaytodolist.data
 
-import android.icu.util.Calendar
+import java.util.Calendar //DO NOT USE THE ANDROID IMPORT, it breaks the unit tests and I am _not_ mocking out Calendar, that's dumb
 import java.time.LocalTime
 import java.util.Date
 
@@ -11,7 +11,14 @@ class Todo(
     var alarmTime: LocalTime = LocalTime.of(9,0)
 ) {
     private var nextOccurrence: Calendar = calculateNextOccurrence(from = Calendar.getInstance())
-    private var lastOccurrence: Calendar = Calendar.getInstance()
+    private var lastOccurrence: Calendar = {
+        val calendar = Calendar.getInstance()
+        calendar.isLenient = true
+        calendar.add(Calendar.DAY_OF_YEAR, -1) // Set lastOccurrence to yesterday to avoid it looking like it was completed today until explicitly marked as such
+        calendar!!
+    }()
+
+
     var timesSnoozedSinceLastCompletion: Int = 0
         private set(value) {
             field = value
@@ -24,24 +31,32 @@ class Todo(
         return nextOccurrence.time
     }
 
+    fun completedToday(): Boolean {
+        val today = Calendar.getInstance()
+        return (today.get(Calendar.DAY_OF_YEAR) == lastOccurrence.get(Calendar.DAY_OF_YEAR) &&
+                today.get(Calendar.YEAR) == lastOccurrence.get(Calendar.YEAR))
+    }
+
     fun markCompleted() {
         timesSnoozedSinceLastCompletion = 0
         lastOccurrence = Calendar.getInstance()
-        nextOccurrence = calculateNextOccurrence()
+        lastOccurrence.isLenient = true
+        nextOccurrence = calculateNextOccurrence(from = lastOccurrence)
     }
 
     fun snooze(snoozeLength: Int = 1) {
         timesSnoozedSinceLastCompletion++
-        nextOccurrence = calculateNextOccurrence(snoozeLength = snoozeLength)
+        nextOccurrence = calculateNextOccurrence(from = nextOccurrence, snoozeLength = snoozeLength)
     }
 
     private fun calculateNextOccurrence(
-        from: Calendar = nextOccurrence,
+        from: Calendar = lastOccurrence,
         snoozeLength: Int = frequencyInDays
     ): Calendar {
-        val calendar = from
+        val calendar = from.clone() as Calendar
+        calendar.isLenient = true
         calendar.add(Calendar.DAY_OF_YEAR, snoozeLength)
-        calendar.set(Calendar.HOUR, alarmTime.hour)
+        calendar.set(Calendar.HOUR_OF_DAY, alarmTime.hour)
         calendar.set(Calendar.MINUTE, alarmTime.minute)
         calendar.set(Calendar.SECOND, 0)
         return calendar

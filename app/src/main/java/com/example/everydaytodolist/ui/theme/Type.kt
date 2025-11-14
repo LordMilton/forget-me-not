@@ -10,13 +10,13 @@ val AppTypography = Typography(
     titleLarge = TextStyle(
         fontWeight = FontWeight.Normal,
         fontSize = 26.sp,
-        lineHeight = 38.sp,
+        lineHeight = 32.sp,
         letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
         fontWeight = FontWeight.Normal,
         fontSize = 18.sp,
-        lineHeight = 28.sp,
+        lineHeight = 26.sp,
         letterSpacing = 0.sp
     ),
     bodyLarge = TextStyle(

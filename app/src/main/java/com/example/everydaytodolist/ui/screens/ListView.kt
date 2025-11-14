@@ -44,7 +44,8 @@ fun TodoList(
                     { onItemDeleteClicked(i) },
                     { onItemCompletedClicked(i) },
                     { onItemSnoozeClicked(i, it) },
-                    Modifier.padding(8.dp)
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                    startExpanded = false
                 )
             }
         }

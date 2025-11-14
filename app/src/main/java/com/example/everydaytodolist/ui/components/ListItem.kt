@@ -1,22 +1,19 @@
 package com.example.everydaytodolist.ui.components
 
 import android.icu.text.DateFormat
-import android.icu.util.Calendar
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,12 +21,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.everydaytodolist.data.Todo
 import com.example.everydaytodolist.R
+import com.example.everydaytodolist.data.Todo
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import com.example.everydaytodolist.ui.theme.ExtendedTheme
 import java.time.LocalTime
@@ -41,13 +40,17 @@ fun ListItem(
     onDeleteClicked: () -> Unit,
     onCompletedClicked: () -> Unit,
     onSnoozeClicked: (Int?) -> Unit,
-    modifier: Modifier = Modifier)
-{
-    var expanded by remember { mutableStateOf(false) }
+    modifier: Modifier = Modifier,
+    startExpanded: Boolean = false
+) {
+    var expanded by remember { mutableStateOf(startExpanded) }
 
     val buttonTextStyle = MaterialTheme.typography.labelLarge
-    val titleTextStyle = MaterialTheme.typography.titleLarge
     val bodyTextStyle = MaterialTheme.typography.bodyMedium
+    var titleTextStyle = MaterialTheme.typography.titleLarge
+    if(data.completedToday()) {
+        titleTextStyle = titleTextStyle.copy(textDecoration = TextDecoration.LineThrough)
+    }
 
     var backgroundColor = MaterialTheme.colorScheme.primary
     var onBackgroundColor = MaterialTheme.colorScheme.onPrimary
@@ -69,7 +72,6 @@ fun ListItem(
         }
     }
 
-
     val buttonColors = ButtonDefaults.buttonColors(
         containerColor = buttonColor,
         contentColor = ButtonDefaults.buttonColors().contentColor,
@@ -88,7 +90,7 @@ fun ListItem(
             Row() {
                 Column(
                     Modifier
-                        .weight(.75f)
+                        .weight(.72f)
                         .padding(8.dp)
                         .clickable() {
                             expanded = !expanded
@@ -125,13 +127,16 @@ fun ListItem(
                     )
                 }
                 Column(
-                    Modifier.weight(.25f)
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.weight(.28f)
                 ) {
+                    val buttonModifier = Modifier
+                        .padding(end = 4.dp)
+                        .defaultMinSize(minWidth = 105.dp) // Force Edit and Delete buttons to be the same size
                     Button(
                         onEditClicked,
                         colors = buttonColors,
-                        modifier = Modifier
-                            .fillMaxWidth()
+                        modifier = buttonModifier
                     ) {
                         Text(
                             "Edit",
@@ -143,44 +148,45 @@ fun ListItem(
                     Button(
                         onDeleteClicked,
                         colors = buttonColors,
-                        modifier = Modifier
-                            .fillMaxWidth()
+                        modifier = buttonModifier
                     ) {
                         Text(
                             "Delete", //TODO Fix issue with this text trying to be on two lines
                             style = buttonTextStyle,
                             color = onButtonColor,
-                            maxLines = 1,
-                            modifier = Modifier.fillMaxWidth()
+                            maxLines = 1
                         )
                     }
                 }
             }
 
             AnimatedVisibility(expanded) {
-                Row() {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Button(
                         onClick = { onSnoozeClicked(1) }, //TODO make this thing a dialog and determine length of snooze from user
-                        colors = buttonColors
+                        colors = buttonColors,
+                        modifier = Modifier.padding(4.dp)
                     ) {
                         Text(
                             "Snooze",
                             style = buttonTextStyle,
                             color = onButtonColor,
-                            maxLines = 1,
-                            modifier = Modifier.fillMaxWidth()
+                            maxLines = 1
                         )
                     }
                     Button(
                         onClick = onCompletedClicked,
-                        colors = buttonColors
+                        colors = buttonColors,
+                        modifier = Modifier.padding(4.dp)
                     ) {
                         Text(
                             "Mark Completed",
                             style = buttonTextStyle,
                             color = onButtonColor,
-                            maxLines = 1,
-                            modifier = Modifier.fillMaxWidth()
+                            maxLines = 1
                         )
                     }
                 }
@@ -196,7 +202,20 @@ fun ListItemPreview() {
 
     EverydayToDoListTheme {
         Surface() {
-            ListItem(sampleData, {}, {}, {}, {}, Modifier)
+            ListItem(sampleData, {}, {}, {}, {}, startExpanded = false, modifier = Modifier)
+        }
+    }
+}
+
+@Preview()
+@Composable
+fun ListItemCompletedPreview() {
+    val sampleData = Todo("Clean Dishes Very Thoroughly", 1, LocalTime.of(9, 0))
+    sampleData.markCompleted()
+
+    EverydayToDoListTheme {
+        Surface() {
+            ListItem(sampleData, {}, {}, {}, {}, startExpanded = false, modifier = Modifier)
         }
     }
 }
@@ -209,7 +228,7 @@ fun ListItemSnoozedPreview() {
 
     EverydayToDoListTheme {
         Surface() {
-            ListItem(sampleData, {}, {}, {}, {}, Modifier)
+            ListItem(sampleData, {}, {}, {}, {}, startExpanded = true, modifier = Modifier)
         }
     }
 }
@@ -224,7 +243,7 @@ fun ListItemOversnoozedPreview() {
     
     EverydayToDoListTheme {
         Surface() {
-            ListItem(sampleData, {}, {}, {}, {}, Modifier)
+            ListItem(sampleData, {}, {}, {}, {}, startExpanded = false, modifier = Modifier)
         }
     }
 }

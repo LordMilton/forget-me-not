@@ -41,11 +41,12 @@ class MainActivity : ComponentActivity() {
                 val onTodoDeleteClicked: (Int) -> Unit = { todoId: Int ->
                     todoList.removeAt(todoId)
                 }
-                val onTodoCompletedClicked: (Int) -> Unit = { todoId: Int ->
-                    val todo = todoList.removeAt(todoId)
-                    todo.markCompleted()
-                    todoList.add(todoId, todo)
-                }
+                val onTodoCompletedClicked: (Int) -> Unit =
+                    { todoId: Int ->
+                        val todo = todoList.removeAt(todoId)
+                        todo.markCompleted()
+                        todoList.add(todoId, todo)
+                    }
                 val onTodoSnoozedClicked: (Int, Int?) -> Unit =
                     { todoId: Int, snoozeLength: Int? ->
                         val todo = todoList.removeAt(todoId)
