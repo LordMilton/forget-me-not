@@ -1,5 +1,9 @@
 package com.example.everydaytodolist.data
 
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
+import java.io.IOException
 import java.util.Calendar //DO NOT USE THE ANDROID IMPORT, it breaks the unit tests and I am _not_ mocking out Calendar, that's dumb
 import java.time.LocalTime
 import java.util.Date
@@ -15,9 +19,8 @@ class Todo(
         val calendar = Calendar.getInstance()
         calendar.isLenient = true
         calendar.add(Calendar.DAY_OF_YEAR, -1) // Set lastOccurrence to yesterday to avoid it looking like it was completed today until explicitly marked as such
-        calendar!!
+        calendar
     }()
-
 
     var timesSnoozedSinceLastCompletion: Int = 0
         private set(value) {
@@ -62,13 +65,97 @@ class Todo(
         return calendar
     }
 
+    override fun toString(): String {
+        return "Todo(title='$title', " +
+                "frequencyInDays=$frequencyInDays, " +
+                "alarmTime=$alarmTime, " +
+                "nextOccurrence=${nextOccurrence.timeInMillis}, " +
+                "lastOccurrence=${lastOccurrence.timeInMillis}, " +
+                "timesSnoozedSinceLastCompletion=$timesSnoozedSinceLastCompletion)"
+    }
+
+
     companion object Factory {
-        fun copy(other: Todo): Todo {
+        fun copy(other: Todo): Todo { //TODO Should probably change this by making Todo Cloneable and implementing this as clone()
             var todoCopy = Todo(other.title, other.frequencyInDays, other.alarmTime)
             todoCopy.lastOccurrence = other.lastOccurrence
             todoCopy.nextOccurrence = todoCopy.calculateNextOccurrence(todoCopy.lastOccurrence)
             todoCopy.timesSnoozedSinceLastCompletion = other.timesSnoozedSinceLastCompletion
             return todoCopy
         }
+
+        fun writeTodosToFile(todoList: List<Todo>, file: File): Boolean {
+            var success = true
+            val writer = BufferedWriter(FileWriter(file))
+            try {
+                for (todo in todoList) {
+                    writer.write(todo.toString() + "\n")
+                }
+            } catch(e: IOException) {
+                println("Could not write todos to internal storage: $e")
+                success = false
+            } finally {
+                writer.close()
+            }
+            return success
+        }
+
+        fun readTodosFromFile(file: File): List<Todo>? {
+            val todoList = mutableListOf<Todo>()
+            if (!file.exists()) {
+                println("Todo list storage file did not exist")
+                return null
+            }
+
+            try {
+                file.forEachLine { line ->
+                    println(line)
+                    // Line format: Todo(title='...', frequencyInDays=..., alarmTime=..., nextOccurrence=..., lastOccurrence=..., timesSnoozedSinceLastCompletion=...)
+                    val properties = line.substringAfter("Todo(").substringBeforeLast(")")
+                    val propertyMap = properties.split(", ").associate {
+                        val (key, value) = it.split("=", limit = 2)
+                        key.trim() to value.trim()
+                    }
+                    
+                    var parseIssue = false
+
+                    val title = (propertyMap["title"]?.removeSurrounding("'") ?: { parseIssue = true; "New Todo" }) as String
+                    val frequencyInDays = (propertyMap["frequencyInDays"]?.toInt() ?: { parseIssue = true; 1 }) as Int
+                    val alarmTime = (propertyMap["alarmTime"]?.let { LocalTime.parse(it) } ?: { parseIssue = true; LocalTime.of(9, 0) }) as LocalTime
+                    val timesSnoozed = (propertyMap["timesSnoozedSinceLastCompletion"]?.toInt() ?: { parseIssue = true; 0 }) as Int
+
+                    // Create the Todo object
+                    val todo = Todo(title, frequencyInDays, alarmTime)
+                    todo.timesSnoozedSinceLastCompletion = timesSnoozed
+
+                    // Get the occurrence times and fix those in the newly made todo
+                    val lastOccurrence = {
+                        val time = (propertyMap["lastOccurrence"]?.toLong() ?: { parseIssue = true; 1 }) as Long
+                        val calendar = todo.lastOccurrence
+                        calendar.timeInMillis = time
+                        calendar
+                    }()
+                    val nextOccurrence = {
+                        val time = (propertyMap["nextOccurrence"]?.toLong() ?: { parseIssue = true; 1 }) as Long
+                        val calendar = todo.nextOccurrence
+                        calendar.timeInMillis = time
+                        calendar
+                    }()
+                    todo.lastOccurrence = lastOccurrence
+                    todo.nextOccurrence = nextOccurrence
+
+                    if(parseIssue) {
+                        println("A stored todo was unparseable, skipping")
+                    } else {
+                        todoList.add(todo)
+                    }
+                }
+            } catch (e: Exception) {
+                println("Could not read todos from internal storage: ${e.message}")
+                // Depending on desired behavior, you might want to return an empty list or re-throw the exception
+            }
+            return todoList
+        }
+
     }
 }

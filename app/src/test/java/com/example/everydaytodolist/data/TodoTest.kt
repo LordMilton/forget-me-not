@@ -108,6 +108,32 @@ class TodoTest {
     }
 
     @Test
+    fun `snooze delays even further when used multiple times`() {
+        // Given a todo
+        val todo = Todo()
+        val initialNextOccurrence = todo.getNextOccurrenceTime()
+
+        // When the todo is snoozed for 1 day, twice
+        val snoozeLength = 1
+        val snoozeCount = 2
+        repeat(snoozeCount) {
+            todo.snooze(snoozeLength)
+        }
+
+        // Then the snooze count should increase twice
+        assertEquals(2, todo.timesSnoozedSinceLastCompletion)
+
+        // And the next occurrence should be postponed by the snooze amount twice
+        val expectedNextOccurrence = Calendar.getInstance().apply {
+            time = initialNextOccurrence
+            add(Calendar.DAY_OF_YEAR, snoozeLength * snoozeCount)
+        }
+        val newNextOccurrence = todo.getNextOccurrenceTime()
+
+        assertEquals(expectedNextOccurrence.get(Calendar.DAY_OF_YEAR), getCalendarField(newNextOccurrence, Calendar.DAY_OF_YEAR))
+    }
+
+    @Test
     fun `snooze with default length uses 1 day`() {
         // Given a todo
         val todo = Todo()

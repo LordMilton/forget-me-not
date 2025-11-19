@@ -1,5 +1,6 @@
 package com.example.everydaytodolist
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,8 +10,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -21,17 +27,27 @@ import com.example.everydaytodolist.data.Todo
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
 import com.example.everydaytodolist.ui.screens.TodoList
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
+import java.io.File
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val storageFilename = "storedTodoList"
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             EverydayToDoListTheme {
                 val navController = rememberNavController()
 
-                val todoList = remember { mutableStateListOf<Todo>() }
+                val context = this
+
+                val todoList = remember {
+                    (Todo.readTodosFromFile(File(context.filesDir, storageFilename)) ?: listOf<Todo>()).toMutableStateList()
+                }
+                val wroteToFile = Todo.writeTodosToFile(todoList, File(context.filesDir, storageFilename))
+                println("Wrote to file: ${if(wroteToFile) "success" else "failure"}")
+
                 val onNewTodoRequested = {
                     navController.navigate("editor_view")
                 }
@@ -43,13 +59,15 @@ class MainActivity : ComponentActivity() {
                 }
                 val onTodoCompletedClicked: (Int) -> Unit =
                     { todoId: Int ->
-                        val todo = todoList.removeAt(todoId)
+                        var todo = todoList.removeAt(todoId)
+                        todo = Todo.copy(todo)
                         todo.markCompleted()
                         todoList.add(todoId, todo)
                     }
                 val onTodoSnoozedClicked: (Int, Int?) -> Unit =
                     { todoId: Int, snoozeLength: Int? ->
-                        val todo = todoList.removeAt(todoId)
+                        var todo = todoList.removeAt(todoId)
+                        todo = Todo.copy(todo)
                         todo.snooze(snoozeLength ?: 1)
                         todoList.add(todoId, todo)
                     }
