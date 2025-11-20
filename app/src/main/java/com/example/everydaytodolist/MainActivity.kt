@@ -1,6 +1,11 @@
 package com.example.everydaytodolist
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,20 +15,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat.getString
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.everydaytodolist.data.Todo
+import com.example.everydaytodolist.ui.notifications.NotificationFactory
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
 import com.example.everydaytodolist.ui.screens.TodoList
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
@@ -47,6 +52,20 @@ class MainActivity : ComponentActivity() {
                 }
                 val wroteToFile = Todo.writeTodosToFile(todoList, File(context.filesDir, storageFilename))
                 println("Wrote to file: ${if(wroteToFile) "success" else "failure"}")
+
+                if(ActivityCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED)
+                {
+                    createNotificationChannel(this)
+                    val notificationManager = remember { NotificationManagerCompat.from(this) }
+                    val notificationFac = remember { NotificationFactory(this) }
+                    for ((i,todo) in todoList.withIndex()) {
+                        val notification = notificationFac.createTodoDue(todo)
+                        notificationManager.notify(i, notification) // TODO Really need to give todos unique ids instead of depending on list ordering
+                    }
+                }
 
                 val onNewTodoRequested = {
                     navController.navigate("editor_view")
@@ -135,5 +154,23 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+fun createNotificationChannel(context: Context) {
+    // Create the NotificationChannel, but only on API 26+ because
+    // the NotificationChannel class is not in the Support Library.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val id = getString(context, R.string.channel_id)
+        val name = getString(context, R.string.channel_name)
+        val descriptionText = getString(context, R.string.channel_description)
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(id, name, importance).apply {
+            description = descriptionText
+        }
+        // Register the channel with the system.
+        val notificationManager: NotificationManager =
+            getSystemService(context, NotificationManager::class.java) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 }
