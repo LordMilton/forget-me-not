@@ -37,13 +37,13 @@ fun TodoList(
         Column(
             Modifier.verticalScroll(rememberScrollState())
         ) {
-            for ((i, todo) in data.withIndex()) {
+            for (todo in data) {
                 ListItem(
                     todo,
-                    { onItemEditClicked(i) },
-                    { onItemDeleteClicked(i) },
-                    { onItemCompletedClicked(i) },
-                    { onItemSnoozeClicked(i, it) },
+                    { onItemEditClicked(todo.getUniqueId()) },
+                    { onItemDeleteClicked(todo.getUniqueId()) },
+                    { onItemCompletedClicked(todo.getUniqueId()) },
+                    { onItemSnoozeClicked(todo.getUniqueId(), it) },
                     modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
                     startExpanded = false
                 )

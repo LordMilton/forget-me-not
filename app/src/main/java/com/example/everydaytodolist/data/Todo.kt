@@ -12,7 +12,8 @@ import java.util.Date
 class Todo(
     var title: String = "New Todo", //TODO Get this into a string resource
     var frequencyInDays: Int = 1,
-    var alarmTime: LocalTime = LocalTime.of(9,0)
+    var alarmTime: LocalTime = LocalTime.of(9,0),
+    private val uniqueId: Int = getNextUniqueId()
 ) {
     private var nextOccurrence: Calendar = calculateNextOccurrence(from = Calendar.getInstance())
     private var lastOccurrence: Calendar = {
@@ -22,11 +23,19 @@ class Todo(
         calendar
     }()
 
+    init {
+        if(lastUniqueId < uniqueId) lastUniqueId = uniqueId
+        println("Created new Todo: $this")
+    }
+
     var timesSnoozedSinceLastCompletion: Int = 0
         private set(value) {
             field = value
         }
 
+    fun getUniqueId(): Int {
+        return uniqueId
+    }
     fun getLastOccurrenceTime(): Date {
         return lastOccurrence.time
     }
@@ -69,6 +78,7 @@ class Todo(
         return "Todo(title='$title', " +
                 "frequencyInDays=$frequencyInDays, " +
                 "alarmTime=$alarmTime, " +
+                "uniqueId=$uniqueId, " +
                 "nextOccurrence=${nextOccurrence.timeInMillis}, " +
                 "lastOccurrence=${lastOccurrence.timeInMillis}, " +
                 "timesSnoozedSinceLastCompletion=$timesSnoozedSinceLastCompletion)"
@@ -76,8 +86,14 @@ class Todo(
 
 
     companion object Factory {
+        private var lastUniqueId = 1
+
+        fun getNextUniqueId(): Int{
+            return ++lastUniqueId
+        }
+
         fun copy(other: Todo): Todo { //TODO Should probably change this by making Todo Cloneable and implementing this as clone()
-            var todoCopy = Todo(other.title, other.frequencyInDays, other.alarmTime)
+            var todoCopy = Todo(other.title, other.frequencyInDays, other.alarmTime, other.getUniqueId())
             todoCopy.lastOccurrence = other.lastOccurrence
             todoCopy.nextOccurrence = todoCopy.calculateNextOccurrence(todoCopy.lastOccurrence)
             todoCopy.timesSnoozedSinceLastCompletion = other.timesSnoozedSinceLastCompletion
@@ -110,7 +126,7 @@ class Todo(
             try {
                 file.forEachLine { line ->
                     println(line)
-                    // Line format: Todo(title='...', frequencyInDays=..., alarmTime=..., nextOccurrence=..., lastOccurrence=..., timesSnoozedSinceLastCompletion=...)
+                    // Line format: Todo(title='...', frequencyInDays=..., alarmTime=..., uniqueId=..., nextOccurrence=..., lastOccurrence=..., timesSnoozedSinceLastCompletion=...)
                     val properties = line.substringAfter("Todo(").substringBeforeLast(")")
                     val propertyMap = properties.split(", ").associate {
                         val (key, value) = it.split("=", limit = 2)
@@ -122,10 +138,11 @@ class Todo(
                     val title = (propertyMap["title"]?.removeSurrounding("'") ?: { parseIssue = true; "New Todo" }) as String
                     val frequencyInDays = (propertyMap["frequencyInDays"]?.toInt() ?: { parseIssue = true; 1 }) as Int
                     val alarmTime = (propertyMap["alarmTime"]?.let { LocalTime.parse(it) } ?: { parseIssue = true; LocalTime.of(9, 0) }) as LocalTime
+                    val uniqueId = (propertyMap["uniqueId"]?.toInt() ?: { parseIssue = true; getNextUniqueId() }) as Int
                     val timesSnoozed = (propertyMap["timesSnoozedSinceLastCompletion"]?.toInt() ?: { parseIssue = true; 0 }) as Int
 
                     // Create the Todo object
-                    val todo = Todo(title, frequencyInDays, alarmTime)
+                    val todo = Todo(title, frequencyInDays, alarmTime, uniqueId)
                     todo.timesSnoozedSinceLastCompletion = timesSnoozed
 
                     // Get the occurrence times and fix those in the newly made todo
@@ -145,10 +162,9 @@ class Todo(
                     todo.nextOccurrence = nextOccurrence
 
                     if(parseIssue) {
-                        println("A stored todo was unparseable, skipping")
-                    } else {
-                        todoList.add(todo)
+                        println("A stored todo was missing values, providing defaults")
                     }
+                    todoList.add(todo)
                 }
             } catch (e: Exception) {
                 println("Could not read todos from internal storage: ${e.message}")

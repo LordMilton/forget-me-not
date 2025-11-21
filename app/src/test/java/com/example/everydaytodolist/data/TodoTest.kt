@@ -169,6 +169,7 @@ class TodoTest {
         assertEquals(original.title, copy.title)
         assertEquals(original.frequencyInDays, copy.frequencyInDays)
         assertEquals(original.alarmTime, copy.alarmTime)
+        assertEquals(original.getUniqueId(), copy.getUniqueId())
         assertEquals(original.timesSnoozedSinceLastCompletion, copy.timesSnoozedSinceLastCompletion)
         assertEquals(original.getLastOccurrenceTime(), copy.getLastOccurrenceTime())
 

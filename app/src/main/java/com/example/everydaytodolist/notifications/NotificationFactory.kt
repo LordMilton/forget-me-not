@@ -1,4 +1,4 @@
-package com.example.everydaytodolist.ui.notifications
+package com.example.everydaytodolist.notifications
 
 import android.app.Notification
 import android.content.Context

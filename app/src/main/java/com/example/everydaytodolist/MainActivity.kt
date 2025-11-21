@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -28,7 +29,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.everydaytodolist.data.Todo
-import com.example.everydaytodolist.ui.notifications.NotificationFactory
+import com.example.everydaytodolist.notifications.NotificationFactory
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
 import com.example.everydaytodolist.ui.screens.TodoList
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
@@ -51,13 +52,14 @@ class MainActivity : ComponentActivity() {
                     (Todo.readTodosFromFile(File(context.filesDir, storageFilename)) ?: listOf<Todo>()).toMutableStateList()
                 }
                 val wroteToFile = Todo.writeTodosToFile(todoList, File(context.filesDir, storageFilename))
-                println("Wrote to file: ${if(wroteToFile) "success" else "failure"}")
+                if(!wroteToFile) println("Failed to write todos to persistent storage")
 
                 if(ActivityCompat.checkSelfPermission(
                         this,
                         Manifest.permission.POST_NOTIFICATIONS
                     ) == PackageManager.PERMISSION_GRANTED)
                 {
+                    val notificationIntent = Intent()
                     createNotificationChannel(this)
                     val notificationManager = remember { NotificationManagerCompat.from(this) }
                     val notificationFac = remember { NotificationFactory(this) }
@@ -67,28 +69,46 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                val onNewTodoRequested = {
-                    navController.navigate("editor_view")
-                }
-                val onTodoEditClicked = { todoId: Int ->
-                    navController.navigate("editor_view?todoId=${todoId}")
-                }
-                val onTodoDeleteClicked: (Int) -> Unit = { todoId: Int ->
-                    todoList.removeAt(todoId)
-                }
+                val onNewTodoRequested =
+                    {
+                        navController.navigate("editor_view")
+                    }
+                val onTodoEditClicked =
+                    { todoId: Int ->
+                        navController.navigate("editor_view?todoId=${todoId}")
+                    }
+                val onTodoDeleteClicked: (Int) -> Unit =
+                    { todoId: Int ->
+                        val (index, todo) = getTodoFromListById(todoList, todoId)
+                        if(todo != null) {
+                            todoList.removeAt(index)
+                        } else {
+                            println("Tried to delete a nonexistent todo with id $todoId")
+                        }
+                    }
                 val onTodoCompletedClicked: (Int) -> Unit =
                     { todoId: Int ->
-                        var todo = todoList.removeAt(todoId)
-                        todo = Todo.copy(todo)
-                        todo.markCompleted()
-                        todoList.add(todoId, todo)
+                        var (index, todo) = getTodoFromListById(todoList, todoId)
+                        if(todo != null) {
+                            todoList.removeAt(index)
+                            todo = Todo.copy(todo)
+                            todo.markCompleted()
+                            todoList.add(index, todo)
+                        } else {
+                            println("Tried to mark a nonexistent todo as completed with id $todoId")
+                        }
                     }
                 val onTodoSnoozedClicked: (Int, Int?) -> Unit =
                     { todoId: Int, snoozeLength: Int? ->
-                        var todo = todoList.removeAt(todoId)
-                        todo = Todo.copy(todo)
-                        todo.snooze(snoozeLength ?: 1)
-                        todoList.add(todoId, todo)
+                        var (index, todo) = getTodoFromListById(todoList, todoId)
+                        if(todo != null){
+                            todoList.removeAt(index)
+                            todo = Todo.copy(todo)
+                            todo.snooze(snoozeLength ?: 1)
+                            todoList.add(index, todo)
+                        } else {
+                            println("Tried to snooze a nonexistent todo with id $todoId")
+                        }
                     }
                 val todoListView: @Composable () -> Unit = { TodoList(
                     todoList,
@@ -123,7 +143,7 @@ class MainActivity : ComponentActivity() {
                             val arguments = curBackStackEntry.arguments
                             val todoId = arguments?.getInt("todoId") ?: -2
                             when (todoId) {
-                                -1 ->
+                                -1 -> {
                                     EditTaskComposable(
                                         Todo(),
                                         {
@@ -134,18 +154,27 @@ class MainActivity : ComponentActivity() {
                                             navController.navigate("list_view")
                                         }
                                     )
+                                }
 
-                                in 0..(todoList.size - 1) ->
-                                    EditTaskComposable(
-                                        todoList[todoId],
-                                        {
-                                            todoList[todoId] = it
-                                            navController.navigate("list_view")
-                                        },
-                                        onCancel = {
-                                            navController.navigate("list_view")
-                                        }
-                                    )
+                                in 0..Int.MAX_VALUE -> {
+                                    val (index, referencedTodo) = getTodoFromListById(todoList, todoId)
+                                    if(referencedTodo != null) {
+                                        EditTaskComposable(
+                                            referencedTodo,
+                                            {
+                                                todoList[index] = it // No need to copy, composition will take place either way since we're switching composables
+                                                navController.navigate("list_view")
+                                            },
+                                            onCancel = {
+                                                navController.navigate("list_view")
+                                            }
+                                        )
+                                    }
+                                    else {
+                                        println("Tried to edit a nonexistent todo with id $todoId")
+                                        todoListView() //TODO Indicate to the user that something went wrong
+                                    }
+                                }
 
                                 else -> todoListView() //TODO Indicate to the user that something went wrong
                             }
@@ -173,4 +202,13 @@ fun createNotificationChannel(context: Context) {
             getSystemService(context, NotificationManager::class.java) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
+}
+
+fun getTodoFromListById(todoList: List<Todo>, id: Int): Pair<Int, Todo?> {
+    for ((i,todo) in todoList.withIndex()) {
+        if (todo.getUniqueId() == id) {
+            return Pair(i,todo)
+        }
+    }
+    return Pair(-1, null)
 }
