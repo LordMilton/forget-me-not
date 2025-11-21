@@ -39,6 +39,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val storageFilename = "storedTodoList"
+        // Todos automatically count up unique ids every time they're created so we need to be careful
+        // about calling the Todo constructor in navigation composables which are called multiple times for...
+        // animations? https://stackoverflow.com/questions/69176617/jetpack-compose-navhost-recomposition-composable-multiple-times
+        // Be super careful about doing anything (Read: Don't do anything) with freshTodo besides setting it to an entirely new Todo()
+        var freshTodo = Todo()
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -72,6 +77,7 @@ class MainActivity : ComponentActivity() {
                 val onNewTodoRequested =
                     {
                         navController.navigate("editor_view")
+                        freshTodo = Todo()
                     }
                 val onTodoEditClicked =
                     { todoId: Int ->
@@ -145,7 +151,7 @@ class MainActivity : ComponentActivity() {
                             when (todoId) {
                                 -1 -> {
                                     EditTaskComposable(
-                                        Todo(),
+                                        freshTodo,
                                         {
                                             todoList.add(it)
                                             navController.navigate("list_view")

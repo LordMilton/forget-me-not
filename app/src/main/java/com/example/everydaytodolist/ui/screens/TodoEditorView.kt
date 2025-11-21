@@ -38,6 +38,9 @@ fun EditTaskComposable(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    if(data == null) {
+
+    }
     var taskName by remember { mutableStateOf(data.title) }
     var frequency by remember { mutableIntStateOf(data.frequencyInDays) }
     var alarmTime by remember { mutableStateOf(data.alarmTime) }
