@@ -85,6 +85,32 @@ class TodoTest {
     }
 
     @Test
+    fun `changing alarmTime changes nextOccurrence`() {
+        // Given a todo
+        val todo = Todo(frequencyInDays = 1, alarmTime = LocalTime.of(9, 0))
+        val initialNextOccurrence = todo.getNextOccurrenceTime()
+
+        // When the todo alarmTime is changed
+        val newAlarmTime = LocalTime.of(12, 30)
+        todo.alarmTime = newAlarmTime
+
+        // Then the alarmTime should be changed
+        assertEquals(newAlarmTime, todo.alarmTime)
+
+        // And the next occurrence should be the same day as before but with the new alarmTime
+        val expectedNextOccurrence = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_YEAR, getCalendarField(initialNextOccurrence, Calendar.DAY_OF_YEAR))
+            set(Calendar.HOUR, newAlarmTime.hour)
+            set(Calendar.MINUTE, newAlarmTime.minute)
+        }
+        val newNextOccurrence = todo.getNextOccurrenceTime()
+
+        assertEquals(expectedNextOccurrence.get(Calendar.DAY_OF_YEAR), getCalendarField(newNextOccurrence, Calendar.DAY_OF_YEAR))
+        assertEquals(expectedNextOccurrence.get(Calendar.HOUR), getCalendarField(newNextOccurrence, Calendar.HOUR))
+        assertEquals(expectedNextOccurrence.get(Calendar.MINUTE), getCalendarField(newNextOccurrence, Calendar.MINUTE))
+    }
+
+    @Test
     fun `snooze increments snooze count and delays nextOccurrence`() {
         // Given a todo
         val todo = Todo()
@@ -110,7 +136,7 @@ class TodoTest {
     @Test
     fun `snooze delays even further when used multiple times`() {
         // Given a todo
-        val todo = Todo()
+        var todo = Todo()
         val initialNextOccurrence = todo.getNextOccurrenceTime()
 
         // When the todo is snoozed for 1 day, twice
@@ -118,6 +144,8 @@ class TodoTest {
         val snoozeCount = 2
         repeat(snoozeCount) {
             todo.snooze(snoozeLength)
+            // Copying has to happen to force recomposition in the real app, so make sure it doesn't cause weird things here too
+            todo = Todo.copy(todo)
         }
 
         // Then the snooze count should increase twice

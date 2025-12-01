@@ -151,7 +151,7 @@ fun ListItem(
                         modifier = buttonModifier
                     ) {
                         Text(
-                            "Delete", //TODO Fix issue with this text trying to be on two lines
+                            "Delete",
                             style = buttonTextStyle,
                             color = onButtonColor,
                             maxLines = 1

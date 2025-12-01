@@ -23,6 +23,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <receiver
+            android:name=".receivers.AlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="Todo Notification" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

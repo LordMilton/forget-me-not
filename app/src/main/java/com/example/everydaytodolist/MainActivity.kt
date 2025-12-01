@@ -1,11 +1,14 @@
 package com.example.everydaytodolist
 
 import android.Manifest
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -20,16 +23,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat.getString
 import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.net.toUri
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.everydaytodolist.data.Todo
-import com.example.everydaytodolist.notifications.NotificationFactory
+import com.example.everydaytodolist.receivers.AlarmReceiver
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
 import com.example.everydaytodolist.ui.screens.TodoList
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
@@ -64,13 +67,21 @@ class MainActivity : ComponentActivity() {
                         Manifest.permission.POST_NOTIFICATIONS
                     ) == PackageManager.PERMISSION_GRANTED)
                 {
-                    val notificationIntent = Intent()
                     createNotificationChannel(this)
-                    val notificationManager = remember { NotificationManagerCompat.from(this) }
-                    val notificationFac = remember { NotificationFactory(this) }
-                    for ((i,todo) in todoList.withIndex()) {
-                        val notification = notificationFac.createTodoDue(todo)
-                        notificationManager.notify(i, notification) // TODO Really need to give todos unique ids instead of depending on list ordering
+                    val alarmManager = this.getSystemService(ALARM_SERVICE) as AlarmManager
+                    val baseTodoIdUri = "content://todos".toUri()
+                    for (todo in todoList) {
+                        val todoIdUri = Uri.withAppendedPath(baseTodoIdUri, todo.getUniqueId().toString())
+                        val notificationIntent = Intent("Todo Notification",
+                            todoIdUri,
+                            this,
+                            AlarmReceiver::class.java)
+                        val pendingIntent = PendingIntent.getBroadcast(
+                            this,
+                            1,
+                            notificationIntent,
+                            PendingIntent.FLAG_IMMUTABLE)
+                        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, todo.getNextOccurrenceTime().time, pendingIntent)
                     }
                 }
 

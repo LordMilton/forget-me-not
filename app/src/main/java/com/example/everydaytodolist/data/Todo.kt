@@ -11,27 +11,46 @@ import java.util.Date
 //TODO Interface for different types of Todos
 class Todo(
     var title: String = "New Todo", //TODO Get this into a string resource
-    var frequencyInDays: Int = 1,
-    var alarmTime: LocalTime = LocalTime.of(9,0),
+    frequencyInDays: Int = 1,
+    alarmTime: LocalTime = LocalTime.of(9,0),
     private val uniqueId: Int = getNextUniqueId()
 ) {
-    private var nextOccurrence: Calendar = calculateNextOccurrence(from = Calendar.getInstance())
+    var frequencyInDays = frequencyInDays
+        set(value) {
+            val oldField = field
+            field = value
+            if(field != oldField) {
+                // If frequencyInDays gets changed, reset the nextOccurrence timing based on the new frequency
+                // Leaves snooze coloring alone, but will be calculated as if it hasn't been snoozed (seemed most logical at the time)
+                nextOccurrence = calculateNextOccurrence()
+            }
+        }
+    var alarmTime = alarmTime
+        set(value) {
+            val oldField = field
+            field = value
+            if(field != oldField) {
+                // If alarmTime gets changed, fix the nextOccurrence timing based on the new alarm time
+                fixNextOccurrenceTime()
+            }
+        }
     private var lastOccurrence: Calendar = {
         val calendar = Calendar.getInstance()
         calendar.isLenient = true
-        calendar.add(Calendar.DAY_OF_YEAR, -1) // Set lastOccurrence to yesterday to avoid it looking like it was completed today until explicitly marked as such
+        calendar.add(Calendar.DAY_OF_YEAR, -frequencyInDays) // Set lastOccurrence to yesterday to avoid it looking like it was completed today until explicitly marked as such
         calendar
     }()
-
-    init {
-        if(lastUniqueId < uniqueId) lastUniqueId = uniqueId
-        println("Created new Todo: $this")
-    }
+    private var nextOccurrence: Calendar = calculateNextOccurrence(from = lastOccurrence)
 
     var timesSnoozedSinceLastCompletion: Int = 0
         private set(value) {
             field = value
         }
+
+    init {
+        if(lastUniqueId < uniqueId) lastUniqueId = uniqueId
+        println("Created new Todo: $this")
+    }
 
     fun getUniqueId(): Int {
         return uniqueId
@@ -68,10 +87,31 @@ class Todo(
         val calendar = from.clone() as Calendar
         calendar.isLenient = true
         calendar.add(Calendar.DAY_OF_YEAR, snoozeLength)
+        // If the nextOccurrence ends up being in the past, bump it forward to today
+        val today = Calendar.getInstance().apply{
+            set(Calendar.HOUR, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+        }
+        if(today.after(calendar)) {
+            calendar.apply{
+                set(Calendar.DAY_OF_YEAR, today.get(Calendar.DAY_OF_YEAR))
+                set(Calendar.YEAR, today.get(Calendar.YEAR))
+            }
+        }
         calendar.set(Calendar.HOUR_OF_DAY, alarmTime.hour)
         calendar.set(Calendar.MINUTE, alarmTime.minute)
         calendar.set(Calendar.SECOND, 0)
         return calendar
+    }
+
+    private fun fixNextOccurrenceTime() {
+        val calendar = nextOccurrence.clone() as Calendar
+        calendar.set(Calendar.HOUR_OF_DAY, alarmTime.hour)
+        calendar.set(Calendar.MINUTE, alarmTime.minute)
+        calendar.set(Calendar.SECOND, 0)
+
+        nextOccurrence = calendar
     }
 
     override fun toString(): String {
@@ -95,7 +135,7 @@ class Todo(
         fun copy(other: Todo): Todo { //TODO Should probably change this by making Todo Cloneable and implementing this as clone()
             var todoCopy = Todo(other.title, other.frequencyInDays, other.alarmTime, other.getUniqueId())
             todoCopy.lastOccurrence = other.lastOccurrence
-            todoCopy.nextOccurrence = todoCopy.calculateNextOccurrence(todoCopy.lastOccurrence)
+            todoCopy.nextOccurrence = other.nextOccurrence
             todoCopy.timesSnoozedSinceLastCompletion = other.timesSnoozedSinceLastCompletion
             return todoCopy
         }

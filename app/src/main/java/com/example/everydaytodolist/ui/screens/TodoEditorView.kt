@@ -33,21 +33,24 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTaskComposable(
-    data: Todo,
+    data: Todo?,
     onSave: (Todo) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var editingTodo = data
+    var editingNewTodo = false
     if(data == null) {
-
+        editingNewTodo = true
+        editingTodo = Todo()
     }
-    var taskName by remember { mutableStateOf(data.title) }
-    var frequency by remember { mutableIntStateOf(data.frequencyInDays) }
-    var alarmTime by remember { mutableStateOf(data.alarmTime) }
+    var taskName by remember { mutableStateOf(editingTodo.title) }
+    var frequencyString by remember { mutableStateOf(editingTodo.frequencyInDays.toString()) }
+    var alarmTime by remember { mutableStateOf(editingTodo.alarmTime) }
     // Need this dedicated state for the TimePicker
     var timePickerState = rememberTimePickerState(
-        initialHour = data.alarmTime.hour,
-        initialMinute = data.alarmTime.minute
+        initialHour = editingTodo.alarmTime.hour,
+        initialMinute = editingTodo.alarmTime.minute
     )
 
 
@@ -80,8 +83,8 @@ fun EditTaskComposable(
                 modifier = Modifier.padding(end = 8.dp)
             )
             OutlinedTextField(
-                value = "$frequency",
-                onValueChange = { frequency = it.toIntOrNull() ?: 1 },
+                value = frequencyString,
+                onValueChange = { frequencyString = it },
                 suffix = { Text(
                     "Days",
                     style = MaterialTheme.typography.bodyLarge
@@ -160,13 +163,22 @@ fun EditTaskComposable(
             }
             Button(
                 onClick = {
-                    var newTodo = Todo.copy(data)
-                    newTodo.title = taskName
-                    newTodo.frequencyInDays = frequency
-                    newTodo.alarmTime = alarmTime
+                    var newTodo: Todo
+                    when(editingNewTodo){
+                        true -> {
+                            newTodo = Todo(taskName, frequencyString.toInt(), alarmTime)
+                        }
+                        false -> {
+                            newTodo = Todo.copy(editingTodo)
+                            newTodo.title = taskName
+                            newTodo.frequencyInDays = frequencyString.toInt()
+                            newTodo.alarmTime = alarmTime
+                        }
+                    }
                     onSave(newTodo)
                 },
-                Modifier.padding(end = 8.dp)
+                enabled = isFrequencyValid(frequencyString),
+                modifier = Modifier.padding(end = 8.dp)
             ) {
                 Text(
                     text = "Save"
@@ -198,6 +210,14 @@ fun TimePickerDialog(
         confirmButton = confirmButton,
         dismissButton = dismissButton
     )
+}
+
+fun isFrequencyValid(frequencyString: String): Boolean {
+    val frequency = frequencyString.toIntOrNull() ?: -1
+    if(frequency < 1) {
+        return false
+    }
+    return true
 }
 
 @Preview(showBackground = true)
