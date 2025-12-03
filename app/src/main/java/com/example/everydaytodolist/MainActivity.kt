@@ -19,7 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
@@ -32,6 +35,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.everydaytodolist.data.Todo
+import com.example.everydaytodolist.data.TodoSorter
 import com.example.everydaytodolist.receivers.AlarmReceiver
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
 import com.example.everydaytodolist.ui.screens.TodoList
@@ -56,8 +60,19 @@ class MainActivity : ComponentActivity() {
 
                 val context = this
 
+                var firstOpened by remember { mutableStateOf(true) }
+                val sortedBy = TodoSorter.SortMethod.DUE_DATE
                 val todoList = remember {
-                    (Todo.readTodosFromFile(File(context.filesDir, storageFilename)) ?: listOf<Todo>()).toMutableStateList()
+                    {
+                        val list = (Todo.readTodosFromFile(
+                            File(
+                                context.filesDir,
+                                storageFilename
+                            )) ?: listOf<Todo>())
+                            .toMutableStateList()
+                        TodoSorter.sort(list, sortedBy)
+                        list
+                    }()
                 }
                 val wroteToFile = Todo.writeTodosToFile(todoList, File(context.filesDir, storageFilename))
                 if(!wroteToFile) println("Failed to write todos to persistent storage")
@@ -111,6 +126,7 @@ class MainActivity : ComponentActivity() {
                             todo = Todo.copy(todo)
                             todo.markCompleted()
                             todoList.add(index, todo)
+                            TodoSorter.sort(todoList, sortedBy)
                         } else {
                             println("Tried to mark a nonexistent todo as completed with id $todoId")
                         }
@@ -123,6 +139,7 @@ class MainActivity : ComponentActivity() {
                             todo = Todo.copy(todo)
                             todo.snooze(snoozeLength ?: 1)
                             todoList.add(index, todo)
+                            TodoSorter.sort(todoList, sortedBy)
                         } else {
                             println("Tried to snooze a nonexistent todo with id $todoId")
                         }
@@ -165,6 +182,7 @@ class MainActivity : ComponentActivity() {
                                         freshTodo,
                                         {
                                             todoList.add(it)
+                                            TodoSorter.sort(todoList, sortedBy)
                                             navController.navigate("list_view")
                                         },
                                         onCancel = {
@@ -180,6 +198,7 @@ class MainActivity : ComponentActivity() {
                                             referencedTodo,
                                             {
                                                 todoList[index] = it // No need to copy, composition will take place either way since we're switching composables
+                                                TodoSorter.sort(todoList, sortedBy)
                                                 navController.navigate("list_view")
                                             },
                                             onCancel = {
