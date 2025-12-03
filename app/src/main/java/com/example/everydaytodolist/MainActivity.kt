@@ -60,7 +60,6 @@ class MainActivity : ComponentActivity() {
 
                 val context = this
 
-                var firstOpened by remember { mutableStateOf(true) }
                 val sortedBy = TodoSorter.SortMethod.DUE_DATE
                 val todoList = remember {
                     {

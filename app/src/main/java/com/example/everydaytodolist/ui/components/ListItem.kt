@@ -178,7 +178,10 @@ fun ListItem(
                         )
                     }
                     Button(
-                        onClick = onCompletedClicked,
+                        onClick = {
+                            expanded = false
+                            onCompletedClicked()
+                        },
                         colors = buttonColors,
                         modifier = Modifier.padding(4.dp)
                     ) {

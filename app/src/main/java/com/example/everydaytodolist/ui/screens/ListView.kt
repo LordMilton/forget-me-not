@@ -1,12 +1,11 @@
 package com.example.everydaytodolist.ui.screens
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -34,17 +33,20 @@ fun TodoList(
     modifier: Modifier = Modifier)
 {
     Box(modifier.fillMaxSize()) {
-        Column(
-            Modifier.verticalScroll(rememberScrollState())
+        LazyColumn(
+            modifier = Modifier
         ) {
-            for (todo in data) {
+            items(
+                items = data,
+                key = { it.getUniqueId() }
+            ) { todo ->
                 ListItem(
                     todo,
                     { onItemEditClicked(todo.getUniqueId()) },
                     { onItemDeleteClicked(todo.getUniqueId()) },
                     { onItemCompletedClicked(todo.getUniqueId()) },
                     { onItemSnoozeClicked(todo.getUniqueId(), it) },
-                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp).animateItem(),
                     startExpanded = false
                 )
             }
