@@ -10,9 +10,9 @@ import java.util.Date
 
 //TODO Interface for different types of Todos
 class Todo(
-    var title: String = "New Todo", //TODO Get this into a string resource
-    frequencyInDays: Int = 1,
-    alarmTime: LocalTime = LocalTime.of(9,0),
+    var title: String = defaultName, //TODO Get this into a string resource
+    frequencyInDays: Int = defaultFrequency,
+    alarmTime: LocalTime = defaultAlarmTime,
     private val uniqueId: Int = getNextUniqueId()
 ) {
     var frequencyInDays = frequencyInDays
@@ -128,12 +128,16 @@ class Todo(
     companion object Factory {
         private var lastUniqueId = 1
 
+        val defaultName = "New Todo"
+        val defaultFrequency = 1
+        val defaultAlarmTime = LocalTime.of(9,0)
+
         fun getNextUniqueId(): Int{
             return ++lastUniqueId
         }
 
         fun copy(other: Todo): Todo { //TODO Should probably change this by making Todo Cloneable and implementing this as clone()
-            var todoCopy = Todo(other.title, other.frequencyInDays, other.alarmTime, other.getUniqueId())
+            val todoCopy = Todo(other.title, other.frequencyInDays, other.alarmTime, other.getUniqueId())
             todoCopy.lastOccurrence = other.lastOccurrence
             todoCopy.nextOccurrence = other.nextOccurrence
             todoCopy.timesSnoozedSinceLastCompletion = other.timesSnoozedSinceLastCompletion

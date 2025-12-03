@@ -19,10 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
@@ -46,11 +43,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val storageFilename = "storedTodoList"
-        // Todos automatically count up unique ids every time they're created so we need to be careful
-        // about calling the Todo constructor in navigation composables which are called multiple times for...
-        // animations? https://stackoverflow.com/questions/69176617/jetpack-compose-navhost-recomposition-composable-multiple-times
-        // Be super careful about doing anything (Read: Don't do anything) with freshTodo besides setting it to an entirely new Todo()
-        var freshTodo = Todo()
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -102,7 +94,6 @@ class MainActivity : ComponentActivity() {
                 val onNewTodoRequested =
                     {
                         navController.navigate("editor_view")
-                        freshTodo = Todo()
                     }
                 val onTodoEditClicked =
                     { todoId: Int ->
@@ -178,7 +169,7 @@ class MainActivity : ComponentActivity() {
                             when (todoId) {
                                 -1 -> {
                                     EditTaskComposable(
-                                        freshTodo,
+                                        null,
                                         {
                                             todoList.add(it)
                                             TodoSorter.sort(todoList, sortedBy)

@@ -38,19 +38,14 @@ fun EditTaskComposable(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var editingTodo = data
-    var editingNewTodo = false
-    if(data == null) {
-        editingNewTodo = true
-        editingTodo = Todo()
-    }
-    var taskName by remember { mutableStateOf(editingTodo.title) }
-    var frequencyString by remember { mutableStateOf(editingTodo.frequencyInDays.toString()) }
-    var alarmTime by remember { mutableStateOf(editingTodo.alarmTime) }
+    val editingNewTodo = (data == null)
+    var taskName by remember { mutableStateOf(data?.title ?: Todo.defaultName) }
+    var frequencyString by remember { mutableStateOf((data?.frequencyInDays ?: Todo.defaultFrequency).toString()) }
+    var alarmTime by remember { mutableStateOf(data?.alarmTime ?: Todo.defaultAlarmTime) }
     // Need this dedicated state for the TimePicker
     var timePickerState = rememberTimePickerState(
-        initialHour = editingTodo.alarmTime.hour,
-        initialMinute = editingTodo.alarmTime.minute
+        initialHour = alarmTime.hour,
+        initialMinute = alarmTime.minute
     )
 
 
@@ -169,7 +164,7 @@ fun EditTaskComposable(
                             newTodo = Todo(taskName, frequencyString.toInt(), alarmTime)
                         }
                         false -> {
-                            newTodo = Todo.copy(editingTodo)
+                            newTodo = Todo.copy(data)
                             newTodo.title = taskName
                             newTodo.frequencyInDays = frequencyString.toInt()
                             newTodo.alarmTime = alarmTime
