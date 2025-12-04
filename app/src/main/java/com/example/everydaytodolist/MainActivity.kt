@@ -134,13 +134,19 @@ class MainActivity : ComponentActivity() {
                             println("Tried to snooze a nonexistent todo with id $todoId")
                         }
                     }
+                val onSortClicked: (TodoSorter.SortMethod, Boolean) -> Unit =
+                    {   sortMethod: TodoSorter.SortMethod, reversed: Boolean ->
+                        TodoSorter.sort(todoList, sortMethod, reversed)
+                    }
                 val todoListView: @Composable () -> Unit = { TodoList(
                     todoList,
                     onNewTodoRequested,
                     onTodoEditClicked,
                     onTodoDeleteClicked,
                     onTodoCompletedClicked,
-                    onTodoSnoozedClicked
+                    onTodoSnoozedClicked,
+                    onSortClicked,
+                    Modifier
                 ) }
 
                 Scaffold(

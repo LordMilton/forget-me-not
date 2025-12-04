@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.ui.text)
     //implementation(libs.androidx.material3)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.reflect)
