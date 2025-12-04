@@ -7,4 +7,5 @@
     <string name="channel_id">Todo</string>
     <string name="channel_name">Todo</string>
     <string name="channel_description">Notifications of timed todo items</string>
+    <string name="expand_hint">Tap to expand</string>
 </resources>
