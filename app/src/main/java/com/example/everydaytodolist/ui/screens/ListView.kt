@@ -29,13 +29,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.everydaytodolist.R
 import com.example.everydaytodolist.data.Todo
 import com.example.everydaytodolist.data.TodoSorter
-import com.example.everydaytodolist.R
 import com.example.everydaytodolist.ui.components.ListItem
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.time.LocalTime

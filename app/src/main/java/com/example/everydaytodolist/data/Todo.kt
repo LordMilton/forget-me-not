@@ -1,9 +1,5 @@
 package com.example.everydaytodolist.data
 
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileWriter
-import java.io.IOException
 import java.util.Calendar //DO NOT USE THE ANDROID IMPORT, it breaks the unit tests and I am _not_ mocking out Calendar, that's dumb
 import java.time.LocalTime
 import java.util.Date
@@ -47,7 +43,7 @@ class Todo(
             field = value
             if(field != oldField) {
                 // If alarmTime gets changed, fix the nextOccurrence timing based on the new alarm time
-                fixNextOccurrenceTime()
+                nextOccurrence = setCalendarToAlarmTime(nextOccurrence)
             }
         }
     private var lastOccurrence: Calendar = {
@@ -96,11 +92,19 @@ class Todo(
         nextOccurrence = calculateNextOccurrence(from = nextOccurrence, snoozeLength = snoozeLength)
     }
 
+    fun snoozeUntil(calendarDate: Calendar, matchAlarmTime: Boolean = true) {
+        timesSnoozedSinceLastCompletion++
+        nextOccurrence = calendarDate
+        if(matchAlarmTime) {
+            nextOccurrence = setCalendarToAlarmTime(nextOccurrence)
+        }
+    }
+
     private fun calculateNextOccurrence(
         from: Calendar = lastOccurrence,
         snoozeLength: Int = frequencyInDays
     ): Calendar {
-        val calendar = from.clone() as Calendar
+        var calendar = from.clone() as Calendar
         calendar.isLenient = true
         calendar.add(Calendar.DAY_OF_YEAR, snoozeLength)
         // If the nextOccurrence ends up being in the past, bump it forward to today
@@ -115,19 +119,20 @@ class Todo(
                 set(Calendar.YEAR, today.get(Calendar.YEAR))
             }
         }
-        calendar.set(Calendar.HOUR_OF_DAY, alarmTime.hour)
-        calendar.set(Calendar.MINUTE, alarmTime.minute)
-        calendar.set(Calendar.SECOND, 0)
+        calendar = setCalendarToAlarmTime(calendar)
         return calendar
     }
 
-    private fun fixNextOccurrenceTime() {
-        val calendar = nextOccurrence.clone() as Calendar
-        calendar.set(Calendar.HOUR_OF_DAY, alarmTime.hour)
-        calendar.set(Calendar.MINUTE, alarmTime.minute)
-        calendar.set(Calendar.SECOND, 0)
+    private fun setCalendarToAlarmTime(calendar: Calendar): Calendar {
+        val calendar = calendar.clone() as Calendar
+        calendar.apply {
+            set(Calendar.HOUR_OF_DAY, alarmTime.hour)
+            set(Calendar.MINUTE, alarmTime.minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
 
-        nextOccurrence = calendar
+        return calendar
     }
 
     override fun toString(): String {

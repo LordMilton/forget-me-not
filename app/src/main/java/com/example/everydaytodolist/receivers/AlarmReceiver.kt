@@ -7,12 +7,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
-import com.example.everydaytodolist.data.Todo
+import com.example.everydaytodolist.R
 import com.example.everydaytodolist.data.TodoListUtil
 import com.example.everydaytodolist.getTodoFromListById
 import com.example.everydaytodolist.notifications.NotificationFactory
 import java.io.File
-import java.util.Calendar
 
 class AlarmReceiver: BroadcastReceiver() {
 
@@ -36,7 +35,7 @@ class AlarmReceiver: BroadcastReceiver() {
             if (todoId >= 0) {
                 // Safe way to have the todolist filename be global? I don't think making it an app string constant is safe (bla bla, not supposed to be obvious what a storage file would be called)
                 val todoList =
-                    TodoListUtil.readTodosFromFile(File(context.filesDir, "storedTodoList"))
+                    TodoListUtil.readTodosFromFile(File(context.filesDir, context.resources.getString(R.string.todo_storage_file)))
                         ?: listOf()
                 val todo = getTodoFromListById(todoList, todoId).second
                 if (todo != null) {
@@ -51,26 +50,13 @@ class AlarmReceiver: BroadcastReceiver() {
 
     fun performMidnightTodoRollover(context: Context, job: Intent) {
         println("Received midnight broadcast")
-        val todoList =
-            TodoListUtil.readTodosFromFile(File(context.filesDir, "storedTodoList"))
+        var todoList =
+            TodoListUtil.readTodosFromFile(File(context.filesDir, context.resources.getString(R.string.todo_storage_file)))
                 ?: listOf()
-        val midnightToday = Calendar.getInstance()
-        midnightToday.apply {
-            set(Calendar.HOUR, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val movedTodos = mutableListOf<Todo>()
-        for(todo in todoList) {
-            val nextOccurrence = Calendar.getInstance()
-            nextOccurrence.time = todo.getNextOccurrenceTime()
-            if(nextOccurrence < midnightToday) {
-                todo.snooze()
-                movedTodos.add(todo)
-            }
-        }
+        todoList = TodoListUtil.snoozeIncompleteTodosToToday(todoList)
 
-        TodoListUtil.createNotificationAlarms(context, movedTodos)
+        TodoListUtil.createNotificationAlarms(context, todoList)
+
+        TodoListUtil.writeTodosToFile(todoList, File(context.filesDir, context.resources.getString(R.string.todo_storage_file)))
     }
 }

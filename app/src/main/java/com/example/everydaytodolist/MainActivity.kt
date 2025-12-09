@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.getString
 import androidx.core.content.ContextCompat.getSystemService
@@ -35,6 +36,7 @@ import com.example.everydaytodolist.data.Todo
 import com.example.everydaytodolist.data.TodoListUtil
 import com.example.everydaytodolist.data.TodoSorter
 import com.example.everydaytodolist.receivers.AlarmReceiver
+import com.example.everydaytodolist.R
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
 import com.example.everydaytodolist.ui.screens.TodoList
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
@@ -44,7 +46,7 @@ import java.util.Calendar
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val storageFilename = "storedTodoList"
+        val storageFilename = this.resources.getString(R.string.todo_storage_file)
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
