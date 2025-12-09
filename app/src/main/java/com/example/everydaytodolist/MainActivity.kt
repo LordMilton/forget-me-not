@@ -32,12 +32,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.everydaytodolist.data.Todo
+import com.example.everydaytodolist.data.TodoListUtil
 import com.example.everydaytodolist.data.TodoSorter
 import com.example.everydaytodolist.receivers.AlarmReceiver
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
 import com.example.everydaytodolist.ui.screens.TodoList
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.io.File
+import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
 
@@ -55,7 +57,7 @@ class MainActivity : ComponentActivity() {
                 val sortedBy = TodoSorter.SortMethod.DUE_DATE
                 val todoList = remember {
                     {
-                        val list = (Todo.readTodosFromFile(
+                        val list = (TodoListUtil.readTodosFromFile(
                             File(
                                 context.filesDir,
                                 storageFilename
@@ -65,31 +67,31 @@ class MainActivity : ComponentActivity() {
                         list
                     }()
                 }
-                val wroteToFile = Todo.writeTodosToFile(todoList, File(context.filesDir, storageFilename))
+                val wroteToFile = TodoListUtil.writeTodosToFile(todoList, File(context.filesDir, storageFilename))
                 if(!wroteToFile) println("Failed to write todos to persistent storage")
 
-                if(ActivityCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ) == PackageManager.PERMISSION_GRANTED)
-                {
-                    createNotificationChannel(this)
-                    val alarmManager = this.getSystemService(ALARM_SERVICE) as AlarmManager
-                    val baseTodoIdUri = "content://todos".toUri()
-                    for (todo in todoList) {
-                        val todoIdUri = Uri.withAppendedPath(baseTodoIdUri, todo.getUniqueId().toString())
-                        val notificationIntent = Intent("Todo Notification",
-                            todoIdUri,
-                            this,
-                            AlarmReceiver::class.java)
-                        val pendingIntent = PendingIntent.getBroadcast(
-                            this,
-                            1,
-                            notificationIntent,
-                            PendingIntent.FLAG_IMMUTABLE)
-                        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, todo.getNextOccurrenceTime().time, pendingIntent)
-                    }
+                // Set up incomplete todos to rollover at midnight every night
+                val alarmManager = context.getSystemService(ALARM_SERVICE) as AlarmManager
+                var nextMidnight = Calendar.getInstance()
+                nextMidnight.apply {
+                    isLenient = true
+                    set(Calendar.DAY_OF_YEAR, get(Calendar.DAY_OF_YEAR) + 1)
+                    set(Calendar.HOUR, 0)
+                    set(Calendar.MINUTE, 0)
                 }
+                val midnightIntent = Intent(
+                    "Midnight",
+                    "".toUri(), // Doesn't need data
+                    context,
+                    AlarmReceiver::class.java)
+                val midnightPendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    1,
+                    midnightIntent,
+                    PendingIntent.FLAG_IMMUTABLE)
+                alarmManager.setRepeating(AlarmManager.RTC, nextMidnight.timeInMillis, (1000 * 60 * 60 * 24), midnightPendingIntent)
+
+                // No longer setting up notifications when app starts, instead happens during midnight 'alarm' and TODO on system boot
 
                 val onNewTodoRequested =
                     {
@@ -179,6 +181,7 @@ class MainActivity : ComponentActivity() {
                                         {
                                             todoList.add(it)
                                             TodoSorter.sort(todoList, sortedBy)
+                                            TodoListUtil.createNotificationAlarms(context, listOf(it))
                                             navController.navigate("list_view")
                                         },
                                         onCancel = {
@@ -195,6 +198,7 @@ class MainActivity : ComponentActivity() {
                                             {
                                                 todoList[index] = it // No need to copy, composition will take place either way since we're switching composables
                                                 TodoSorter.sort(todoList, sortedBy)
+                                                TodoListUtil.createNotificationAlarms(context, listOf(it))
                                                 navController.navigate("list_view")
                                             },
                                             onCancel = {

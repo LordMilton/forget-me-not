@@ -10,11 +10,27 @@ import java.util.Date
 
 //TODO Interface for different types of Todos
 class Todo(
-    var title: String = defaultName, //TODO Get this into a string resource
+    var title: String = defaultName,
     frequencyInDays: Int = defaultFrequency,
     alarmTime: LocalTime = defaultAlarmTime,
     private val uniqueId: Int = getNextUniqueId()
 ) {
+
+    // Reading constructor: primarily used when reading in todos from save file
+    constructor(
+        title: String,
+        frequencyInDays: Int,
+        alarmTime: LocalTime,
+        uniqueId: Int,
+        lastOccurrence: Calendar,
+        nextOccurrence: Calendar,
+        timesSnoozedSinceLastCompletions: Int
+    ) : this(title, frequencyInDays, alarmTime, uniqueId) {
+        this.lastOccurrence = lastOccurrence
+        this.nextOccurrence = nextOccurrence
+        this.timesSnoozedSinceLastCompletion = timesSnoozedSinceLastCompletions
+    }
+
     var frequencyInDays = frequencyInDays
         set(value) {
             val oldField = field
@@ -128,7 +144,7 @@ class Todo(
     companion object Factory {
         private var lastUniqueId = 1
 
-        val defaultName = "New Todo"
+        val defaultName = "New Todo" //TODO Get this into a string resource
         val defaultFrequency = 1
         val defaultAlarmTime = LocalTime.of(9,0)
 
@@ -143,79 +159,5 @@ class Todo(
             todoCopy.timesSnoozedSinceLastCompletion = other.timesSnoozedSinceLastCompletion
             return todoCopy
         }
-
-        fun writeTodosToFile(todoList: List<Todo>, file: File): Boolean {
-            var success = true
-            val writer = BufferedWriter(FileWriter(file))
-            try {
-                for (todo in todoList) {
-                    writer.write(todo.toString() + "\n")
-                }
-            } catch(e: IOException) {
-                println("Could not write todos to internal storage: $e")
-                success = false
-            } finally {
-                writer.close()
-            }
-            return success
-        }
-
-        fun readTodosFromFile(file: File): List<Todo>? {
-            val todoList = mutableListOf<Todo>()
-            if (!file.exists()) {
-                println("Todo list storage file did not exist")
-                return null
-            }
-
-            try {
-                file.forEachLine { line ->
-                    println(line)
-                    // Line format: Todo(title='...', frequencyInDays=..., alarmTime=..., uniqueId=..., nextOccurrence=..., lastOccurrence=..., timesSnoozedSinceLastCompletion=...)
-                    val properties = line.substringAfter("Todo(").substringBeforeLast(")")
-                    val propertyMap = properties.split(", ").associate {
-                        val (key, value) = it.split("=", limit = 2)
-                        key.trim() to value.trim()
-                    }
-                    
-                    var parseIssue = false
-
-                    val title = (propertyMap["title"]?.removeSurrounding("'") ?: { parseIssue = true; "New Todo" }) as String
-                    val frequencyInDays = (propertyMap["frequencyInDays"]?.toInt() ?: { parseIssue = true; 1 }) as Int
-                    val alarmTime = (propertyMap["alarmTime"]?.let { LocalTime.parse(it) } ?: { parseIssue = true; LocalTime.of(9, 0) }) as LocalTime
-                    val uniqueId = (propertyMap["uniqueId"]?.toInt() ?: { parseIssue = true; getNextUniqueId() }) as Int
-                    val timesSnoozed = (propertyMap["timesSnoozedSinceLastCompletion"]?.toInt() ?: { parseIssue = true; 0 }) as Int
-
-                    // Create the Todo object
-                    val todo = Todo(title, frequencyInDays, alarmTime, uniqueId)
-                    todo.timesSnoozedSinceLastCompletion = timesSnoozed
-
-                    // Get the occurrence times and fix those in the newly made todo
-                    val lastOccurrence = {
-                        val time = (propertyMap["lastOccurrence"]?.toLong() ?: { parseIssue = true; 1 }) as Long
-                        val calendar = todo.lastOccurrence
-                        calendar.timeInMillis = time
-                        calendar
-                    }()
-                    val nextOccurrence = {
-                        val time = (propertyMap["nextOccurrence"]?.toLong() ?: { parseIssue = true; 1 }) as Long
-                        val calendar = todo.nextOccurrence
-                        calendar.timeInMillis = time
-                        calendar
-                    }()
-                    todo.lastOccurrence = lastOccurrence
-                    todo.nextOccurrence = nextOccurrence
-
-                    if(parseIssue) {
-                        println("A stored todo was missing values, providing defaults")
-                    }
-                    todoList.add(todo)
-                }
-            } catch (e: Exception) {
-                println("Could not read todos from internal storage: ${e.message}")
-                // Depending on desired behavior, you might want to return an empty list or re-throw the exception
-            }
-            return todoList
-        }
-
     }
 }
