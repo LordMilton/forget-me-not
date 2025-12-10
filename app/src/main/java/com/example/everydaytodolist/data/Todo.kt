@@ -74,6 +74,24 @@ class Todo(
         return nextOccurrence.time
     }
 
+    fun dueToday(): Boolean {
+        val today = Calendar.getInstance()
+        val dueToday = nextOccurrence.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR) &&
+                nextOccurrence.get(Calendar.YEAR) == today.get(Calendar.YEAR)
+        return dueToday
+    }
+
+    fun dueBeforeToday(): Boolean {
+        val midnightToday = Calendar.getInstance()
+        midnightToday.apply {
+            set(Calendar.HOUR, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return nextOccurrence < midnightToday
+    }
+
     fun completedToday(): Boolean {
         val today = Calendar.getInstance()
         return (today.get(Calendar.DAY_OF_YEAR) == lastOccurrence.get(Calendar.DAY_OF_YEAR) &&

@@ -1,14 +1,11 @@
 package com.example.everydaytodolist
 
-import android.Manifest
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -19,11 +16,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.getString
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.net.toUri
@@ -36,9 +34,8 @@ import com.example.everydaytodolist.data.Todo
 import com.example.everydaytodolist.data.TodoListUtil
 import com.example.everydaytodolist.data.TodoSorter
 import com.example.everydaytodolist.receivers.AlarmReceiver
-import com.example.everydaytodolist.R
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
-import com.example.everydaytodolist.ui.screens.TodoList
+import com.example.everydaytodolist.ui.screens.ListView
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.io.File
 import java.util.Calendar
@@ -56,7 +53,7 @@ class MainActivity : ComponentActivity() {
 
                 val context = this
 
-                val sortedBy = TodoSorter.SortMethod.DUE_DATE
+                var sortedBy by remember { mutableStateOf(TodoSorter.SortMethod.DUE_DATE) }
                 val todoList = remember {
                     {
                         val list = (TodoListUtil.readTodosFromFile(
@@ -141,9 +138,11 @@ class MainActivity : ComponentActivity() {
                 val onSortClicked: (TodoSorter.SortMethod, Boolean) -> Unit =
                     {   sortMethod: TodoSorter.SortMethod, reversed: Boolean ->
                         TodoSorter.sort(todoList, sortMethod, reversed)
+                        sortedBy = sortMethod
                     }
-                val todoListView: @Composable () -> Unit = { TodoList(
+                val todoListView: @Composable () -> Unit = { ListView(
                     todoList,
+                    sortedBy,
                     onNewTodoRequested,
                     onTodoEditClicked,
                     onTodoDeleteClicked,

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -40,8 +41,9 @@ import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.time.LocalTime
 
 @Composable
-fun TodoList(
+fun ListView(
     data: List<Todo>,
+    sortMethod: TodoSorter.SortMethod,
     onFabClicked: () -> Unit,
     onItemEditClicked: (Int) -> Unit,
     onItemDeleteClicked: (Int) -> Unit,
@@ -50,6 +52,7 @@ fun TodoList(
     onSortClicked: (TodoSorter.SortMethod, Boolean) -> Unit,
     modifier: Modifier = Modifier)
 {
+    val dataComposables = turnDataIntoLazyComposableItems(data, sortMethod, onItemEditClicked, onItemDeleteClicked, onItemCompletedClicked, onItemSnoozeClicked)
     Box(modifier.fillMaxSize()) {
         Column {
             // MENUBAR
@@ -124,20 +127,10 @@ fun TodoList(
                 modifier = Modifier
             ) {
                 items(
-                    items = data,
-                    key = { it.getUniqueId() }
-                ) { todo ->
-                    ListItem(
-                        todo,
-                        { onItemEditClicked(todo.getUniqueId()) },
-                        { onItemDeleteClicked(todo.getUniqueId()) },
-                        { onItemCompletedClicked(todo.getUniqueId()) },
-                        { onItemSnoozeClicked(todo.getUniqueId(), it) },
-                        modifier = Modifier
-                            .padding(top = 4.dp, bottom = 4.dp)
-                            .animateItem(),
-                        startExpanded = false
-                    )
+                    items = dataComposables,
+                    key = { it.uniqueId }
+                ) { item ->
+                    (item.composable)()
                 }
             }
         }
@@ -159,10 +152,141 @@ fun TodoList(
     }
 }
 
+fun turnDataIntoLazyComposableItems(
+    data: List<Todo>,
+    sortMethod: TodoSorter.SortMethod,
+    onItemEditClicked: (Int) -> Unit,
+    onItemDeleteClicked: (Int) -> Unit,
+    onItemCompletedClicked: (Int) -> Unit,
+    onItemSnoozeClicked: (Int, Int?) -> Unit)
+: List<LazyComposableItem>
+{
+    val composableList = mutableListOf<LazyComposableItem>()
+    when(data.size) {
+        0 -> {
+            composableList.add(nothingToDoItem())
+        }
+        else -> {
+            when (sortMethod) {
+                TodoSorter.SortMethod.DUE_DATE -> {
+                    var firstTodo = true
+                    var dueTodayCount = 0
+                    var doneWithToday = false
+                    for (todo in data) {
+                        if (firstTodo) {
+                            composableList.add(dueTodayItem())
+                            firstTodo = false
+                        }
+                        if (todo.dueToday()) {
+                            dueTodayCount++
+                        } else if (!doneWithToday) {
+                            doneWithToday = true
+                            if (dueTodayCount == 0) {
+                                composableList.add(nothingDueTodayItem())
+                            }
+                            composableList.add(dueLaterItem())
+                        }
+                        composableList.add(
+                            todoToLazyComposableItem(
+                                todo,
+                                onItemEditClicked,
+                                onItemDeleteClicked,
+                                onItemCompletedClicked,
+                                onItemSnoozeClicked
+                            )
+                        )
+                    }
+                }
+
+                else -> {
+                    for (todo in data) {
+                        composableList.add(
+                            todoToLazyComposableItem(
+                                todo,
+                                onItemEditClicked,
+                                onItemDeleteClicked,
+                                onItemCompletedClicked,
+                                onItemSnoozeClicked
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    return composableList
+}
+
+fun dueTodayItem(): LazyComposableItem {
+    return LazyComposableItem(
+        -1,
+        @Composable {
+            Text(
+                "Due Today",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
+    )
+}
+
+fun nothingDueTodayItem(): LazyComposableItem {
+    return LazyComposableItem(-2, @Composable { Text("Nothing Else Due Today") })
+}
+
+fun dueLaterItem(): LazyComposableItem {
+    return LazyComposableItem(
+        -3,
+        @Composable {
+            Text(
+                "Due Later",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
+    )
+}
+
+fun nothingToDoItem(): LazyComposableItem {
+    return LazyComposableItem(-4, @Composable { Text("Nothing To Do!") })
+}
+
+fun todoToLazyComposableItem(
+    todo: Todo,
+    onItemEditClicked: (Int) -> Unit,
+    onItemDeleteClicked: (Int) -> Unit,
+    onItemCompletedClicked: (Int) -> Unit,
+    onItemSnoozeClicked: (Int, Int?) -> Unit
+): LazyComposableItem {
+    return LazyComposableItem(
+        todo.getUniqueId(),
+        {
+            ListItem(
+                todo,
+                { onItemEditClicked(todo.getUniqueId()) },
+                { onItemDeleteClicked(todo.getUniqueId()) },
+                { onItemCompletedClicked(todo.getUniqueId()) },
+                { onItemSnoozeClicked(todo.getUniqueId(), it) },
+                modifier = Modifier
+                    .padding(top = 4.dp, bottom = 4.dp)
+                    .animateItem(),
+                startExpanded = false
+            )
+        }
+    )
+}
+
+class LazyComposableItem(val uniqueId: Int, val composable: @Composable LazyItemScope.() -> Unit)
+
 @Preview
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun TodoListPreview() {
+fun TodoListSortedByDueDatePreview() {
+    val sortMethod = TodoSorter.SortMethod.DUE_DATE
+
     val todo1 = Todo("Clean Dishes", 2, LocalTime.of(20, 0))
     todo1.snooze()
     val todo2 = Todo("Do Laundry", 7, LocalTime.of(12, 0))
@@ -171,15 +295,76 @@ fun TodoListPreview() {
     todo3.snooze()
     todo3.snooze()
 
-    val exampleData = listOf(
+    val exampleData = mutableListOf(
         todo1,
         todo2,
         todo3
     )
+    TodoSorter.sort(exampleData, sortMethod)
 
     EverydayToDoListTheme {
         Scaffold { innerPadding ->
-            TodoList(exampleData,
+            ListView(exampleData,
+                sortMethod,
+                {},
+                {},
+                {},
+                {},
+                { one, two -> },
+                { one, two -> },
+                Modifier.padding(innerPadding)
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun TodoListSortedByDueDateEmptyPreview() {
+    val sortMethod = TodoSorter.SortMethod.DUE_DATE
+
+    val exampleData = mutableListOf<Todo>()
+
+    EverydayToDoListTheme {
+        Scaffold { innerPadding ->
+            ListView(exampleData,
+                sortMethod,
+                {},
+                {},
+                {},
+                {},
+                { one, two -> },
+                { one, two -> },
+                Modifier.padding(innerPadding)
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun TodoListSortedByCreationPreview() {
+    val sortMethod = TodoSorter.SortMethod.CREATED_DATE
+
+    val todo1 = Todo("Clean Dishes", 2, LocalTime.of(20, 0))
+    todo1.snooze()
+    val todo2 = Todo("Do Laundry", 7, LocalTime.of(12, 0))
+    val todo3 = Todo("Brush Teeth", 1, LocalTime.of(9, 0))
+    todo3.snooze()
+    todo3.snooze()
+    todo3.snooze()
+
+    val exampleData = mutableListOf(
+        todo1,
+        todo2,
+        todo3
+    )
+    TodoSorter.sort(exampleData, sortMethod)
+
+    EverydayToDoListTheme {
+        Scaffold { innerPadding ->
+            ListView(exampleData,
+                sortMethod,
                 {},
                 {},
                 {},

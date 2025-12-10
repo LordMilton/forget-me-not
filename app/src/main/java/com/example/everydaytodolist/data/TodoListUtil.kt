@@ -124,18 +124,10 @@ class TodoListUtil {
         }
 
         fun snoozeIncompleteTodosToToday(todoList: List<Todo>): List<Todo> {
-            val midnightToday = Calendar.getInstance()
-            midnightToday.apply {
-                set(Calendar.HOUR, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
+            val today = Calendar.getInstance()
             for(todo in todoList) {
-                val nextOccurrence = Calendar.getInstance()
-                nextOccurrence.time = todo.getNextOccurrenceTime()
-                if(nextOccurrence < midnightToday) {
-                    todo.snoozeUntil(midnightToday)
+                if(todo.dueBeforeToday()) {
+                    todo.snoozeUntil(today)
                 }
             }
 
