@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
                     1,
                     midnightIntent,
                     PendingIntent.FLAG_IMMUTABLE)
-                alarmManager.setRepeating(AlarmManager.RTC, nextMidnight.timeInMillis, (1000 * 60 * 60 * 24), midnightPendingIntent)
+                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, nextMidnight.timeInMillis, (1000 * 60 * 60 * 24), midnightPendingIntent)
 
                 // No longer setting up notifications when app starts, instead happens during midnight 'alarm' and TODO on system boot
 
