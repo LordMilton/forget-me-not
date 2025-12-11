@@ -77,6 +77,7 @@ class MainActivity : ComponentActivity() {
                     set(Calendar.DAY_OF_YEAR, get(Calendar.DAY_OF_YEAR) + 1)
                     set(Calendar.HOUR, 0)
                     set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
                 }
                 val midnightIntent = Intent(
                     "Midnight",

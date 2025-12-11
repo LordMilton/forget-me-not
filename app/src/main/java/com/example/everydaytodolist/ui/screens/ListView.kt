@@ -1,6 +1,7 @@
 package com.example.everydaytodolist.ui.screens
 
 import android.content.res.Configuration
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,8 @@ import com.example.everydaytodolist.ui.components.ListItem
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.time.LocalTime
 
+const val PARTY_POPPER_EMOJI = "\uD83C\uDF89"
+
 @Composable
 fun ListView(
     data: List<Todo>,
@@ -54,7 +57,7 @@ fun ListView(
 {
     val dataComposables = turnDataIntoLazyComposableItems(data, sortMethod, onItemEditClicked, onItemDeleteClicked, onItemCompletedClicked, onItemSnoozeClicked)
     Box(modifier.fillMaxSize()) {
-        Column {
+        Column() {
             // MENUBAR
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -218,40 +221,65 @@ fun turnDataIntoLazyComposableItems(
     return composableList
 }
 
-fun dueTodayItem(): LazyComposableItem {
+fun smallListLabelItem(displayText: String, itemId: Int): LazyComposableItem {
     return LazyComposableItem(
-        -1,
+        itemId,
         @Composable {
-            Text(
-                "Due Today",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(4.dp)
-            )
+            Box(
+                Modifier.padding(4.dp)
+            ) {
+                Text(
+                    displayText,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(4.dp)
+                )
+            }
         }
     )
 }
 
-fun nothingDueTodayItem(): LazyComposableItem {
-    return LazyComposableItem(-2, @Composable { Text("Nothing Else Due Today") })
+fun dueTodayItem(): LazyComposableItem {
+    return smallListLabelItem("Due Today", -1)
 }
 
 fun dueLaterItem(): LazyComposableItem {
-    return LazyComposableItem(
-        -3,
-        @Composable {
-            Text(
-                "Due Later",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(4.dp)
-            )
+    return smallListLabelItem("Due Later", -3)
+}
+
+fun listPlaceholderItem(displayText: String, itemId: Int): LazyComposableItem {
+    return LazyComposableItem(itemId, @Composable {
+        Box(
+            Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        shape = MaterialTheme.shapes.large
+                    )
+                    .padding(4.dp)
+            ) {
+                Text(
+                    displayText,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .align(Alignment.Center)
+                )
+            }
         }
-    )
+    })
+}
+
+fun nothingDueTodayItem(): LazyComposableItem {
+    return listPlaceholderItem("$PARTY_POPPER_EMOJI Nothing Else Due Today $PARTY_POPPER_EMOJI", -2)
 }
 
 fun nothingToDoItem(): LazyComposableItem {
-    return LazyComposableItem(-4, @Composable { Text("Nothing To Do!") })
+    return listPlaceholderItem("$PARTY_POPPER_EMOJI Nothing left to do! $PARTY_POPPER_EMOJI", -4)
 }
 
 fun todoToLazyComposableItem(
@@ -298,6 +326,40 @@ fun TodoListSortedByDueDatePreview() {
     val exampleData = mutableListOf(
         todo1,
         todo2,
+        todo3
+    )
+    TodoSorter.sort(exampleData, sortMethod)
+
+    EverydayToDoListTheme {
+        Scaffold { innerPadding ->
+            ListView(exampleData,
+                sortMethod,
+                {},
+                {},
+                {},
+                {},
+                { one, two -> },
+                { one, two -> },
+                Modifier.padding(innerPadding)
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun TodoListSortedByDueDateEmptyTodayPreview() {
+    val sortMethod = TodoSorter.SortMethod.DUE_DATE
+
+    val todo1 = Todo("Clean Dishes", 2, LocalTime.of(20, 0))
+    todo1.snooze()
+    val todo3 = Todo("Brush Teeth", 1, LocalTime.of(9, 0))
+    todo3.snooze()
+    todo3.snooze()
+    todo3.snooze()
+
+    val exampleData = mutableListOf(
+        todo1,
         todo3
     )
     TodoSorter.sort(exampleData, sortMethod)
