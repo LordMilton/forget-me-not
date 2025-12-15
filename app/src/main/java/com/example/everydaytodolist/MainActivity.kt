@@ -75,7 +75,7 @@ class MainActivity : ComponentActivity() {
                 nextMidnight.apply {
                     isLenient = true
                     set(Calendar.DAY_OF_YEAR, get(Calendar.DAY_OF_YEAR) + 1)
-                    set(Calendar.HOUR, 0)
+                    set(Calendar.HOUR_OF_DAY, 0)
                     set(Calendar.MINUTE, 0)
                     set(Calendar.SECOND, 0)
                 }
