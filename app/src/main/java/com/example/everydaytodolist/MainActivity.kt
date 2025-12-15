@@ -34,6 +34,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.everydaytodolist.alarms.MidnightAlarm
 import com.example.everydaytodolist.data.Todo
 import com.example.everydaytodolist.data.TodoListUtil
 import com.example.everydaytodolist.data.TodoSorter
@@ -59,55 +60,13 @@ val Context.todoDataStore: DataStore<Settings> by dataStore(
 
 class MainActivity : ComponentActivity() {
 
-    init {
-        runBlocking {
-            async { createMidnightAlarms() }
-        }
-    }
+    val context = this
 
     suspend fun finishedFirstRunAfterBoot() {
         this.preferencesDataStore.updateData {
             it.toMutablePreferences().also { preferences ->
                 preferences[booleanPreferencesKey("first_run_after_boot")] = false
             }
-        }
-    }
-
-    fun isFirstRunAfterBootFlow(): Flow<Boolean> = this.preferencesDataStore.data.map { preferences ->
-        preferences[booleanPreferencesKey("first_run_after_boot")] ?: true
-    }
-
-    suspend fun createMidnightAlarms() {
-        var isFirstRunAfterBoot = false
-        isFirstRunAfterBootFlow().collect { isFirstRunAfterBoot = it }
-        if(isFirstRunAfterBoot){
-            val alarmManager = this.getSystemService(ALARM_SERVICE) as AlarmManager
-            val nextMidnight = Calendar.getInstance()
-            nextMidnight.apply {
-                isLenient = true
-                set(Calendar.DAY_OF_YEAR, get(Calendar.DAY_OF_YEAR) + 1)
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-            }
-            val midnightIntent = Intent(
-                "Midnight",
-                "".toUri(), // Doesn't need data
-                this,
-                AlarmReceiver::class.java
-            )
-            val midnightPendingIntent = PendingIntent.getBroadcast(
-                this,
-                1,
-                midnightIntent,
-                PendingIntent.FLAG_IMMUTABLE
-            )
-            alarmManager.setRepeating(
-                AlarmManager.RTC_WAKEUP,
-                nextMidnight.timeInMillis,
-                (1000 * 60 * 60 * 24),
-                midnightPendingIntent
-            )
         }
     }
 
@@ -119,8 +78,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             EverydayToDoListTheme {
                 val navController = rememberNavController()
-
-                val context = this
 
                 var sortedBy by remember { mutableStateOf(TodoSorter.SortMethod.DUE_DATE) }
                 val todoList = remember {
@@ -140,7 +97,8 @@ class MainActivity : ComponentActivity() {
 
                 // Set up incomplete todos to rollover at midnight every night
                 // (Key is there to avoid recomposition)
-                LaunchedEffect(1) { createMidnightAlarms() }
+                LaunchedEffect(1) { MidnightAlarm.createMidnightAlarms(context) }
+                LaunchedEffect(1) { finishedFirstRunAfterBoot() }
 
                 // No longer setting up notifications when app starts, instead happens when the todoObject is first created/edited, during midnight 'alarm', TODO on system boot
 

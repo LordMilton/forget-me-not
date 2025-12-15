@@ -61,7 +61,6 @@ class Todo(
 
     init {
         if(lastUniqueId < uniqueId) lastUniqueId = uniqueId
-        println("Created new Todo: $this")
     }
 
     fun getUniqueId(): Int {

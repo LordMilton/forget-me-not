@@ -3,29 +3,32 @@ package com.example.everydaytodolist.receivers
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import com.example.everydaytodolist.data.TodoListUtil
 import com.example.everydaytodolist.R
+import com.example.everydaytodolist.alarms.MidnightAlarm
+import com.example.everydaytodolist.data.TodoListUtil
 import com.example.everydaytodolist.preferencesDataStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.runBlocking
 import java.io.File
-
-val Context.preferencesDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class OnBootReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, job: Intent) {
         println("Received broadcast")
         when(job.action) {
-            Intent.ACTION_REBOOT -> doRebootActions(context, job)
+            Intent.ACTION_BOOT_COMPLETED -> runBlocking { doRebootActions(context, job) }
             else -> println("Action \"${job.action}\" not covered")
         }
     }
 
-    fun doRebootActions(context: Context, job: Intent) {
-        runBlocking { indicateFirstRunAfterBoot(context) } // TODO Worth making async?
+    fun CoroutineScope.doRebootActions(context: Context, job: Intent) {
+        launch(Dispatchers.Default) {
+            indicateFirstRunAfterBoot(context)
+            MidnightAlarm.createMidnightAlarms(context)
+        }
 
         var todoList =
             TodoListUtil.readTodosFromFile(File(context.filesDir, context.resources.getString(R.string.todo_storage_file)))
