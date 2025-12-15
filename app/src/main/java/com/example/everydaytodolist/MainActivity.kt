@@ -6,7 +6,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,6 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat.getString
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.net.toUri
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,10 +41,75 @@ import com.example.everydaytodolist.receivers.AlarmReceiver
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
 import com.example.everydaytodolist.ui.screens.ListView
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.Calendar
+import kotlin.system.measureTimeMillis
+
+val Context.preferencesDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+/* TODO Upgrade todo storage to protoDataStore
+val Context.todoDataStore: DataStore<Settings> by dataStore(
+    fileName = "settings.pb",
+    serializer = SettingsSerializer,
+)
+ */
 
 class MainActivity : ComponentActivity() {
+
+    init {
+        runBlocking {
+            async { createMidnightAlarms() }
+        }
+    }
+
+    suspend fun finishedFirstRunAfterBoot() {
+        this.preferencesDataStore.updateData {
+            it.toMutablePreferences().also { preferences ->
+                preferences[booleanPreferencesKey("first_run_after_boot")] = false
+            }
+        }
+    }
+
+    fun isFirstRunAfterBootFlow(): Flow<Boolean> = this.preferencesDataStore.data.map { preferences ->
+        preferences[booleanPreferencesKey("first_run_after_boot")] ?: true
+    }
+
+    suspend fun createMidnightAlarms() {
+        var isFirstRunAfterBoot = false
+        isFirstRunAfterBootFlow().collect { isFirstRunAfterBoot = it }
+        if(isFirstRunAfterBoot){
+            val alarmManager = this.getSystemService(ALARM_SERVICE) as AlarmManager
+            val nextMidnight = Calendar.getInstance()
+            nextMidnight.apply {
+                isLenient = true
+                set(Calendar.DAY_OF_YEAR, get(Calendar.DAY_OF_YEAR) + 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+            }
+            val midnightIntent = Intent(
+                "Midnight",
+                "".toUri(), // Doesn't need data
+                this,
+                AlarmReceiver::class.java
+            )
+            val midnightPendingIntent = PendingIntent.getBroadcast(
+                this,
+                1,
+                midnightIntent,
+                PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.setRepeating(
+                AlarmManager.RTC_WAKEUP,
+                nextMidnight.timeInMillis,
+                (1000 * 60 * 60 * 24),
+                midnightPendingIntent
+            )
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val storageFilename = this.resources.getString(R.string.todo_storage_file)
@@ -70,28 +139,10 @@ class MainActivity : ComponentActivity() {
                 if(!wroteToFile) println("Failed to write todos to persistent storage")
 
                 // Set up incomplete todos to rollover at midnight every night
-                val alarmManager = context.getSystemService(ALARM_SERVICE) as AlarmManager
-                var nextMidnight = Calendar.getInstance()
-                nextMidnight.apply {
-                    isLenient = true
-                    set(Calendar.DAY_OF_YEAR, get(Calendar.DAY_OF_YEAR) + 1)
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                }
-                val midnightIntent = Intent(
-                    "Midnight",
-                    "".toUri(), // Doesn't need data
-                    context,
-                    AlarmReceiver::class.java)
-                val midnightPendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    1,
-                    midnightIntent,
-                    PendingIntent.FLAG_IMMUTABLE)
-                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, nextMidnight.timeInMillis, (1000 * 60 * 60 * 24), midnightPendingIntent)
+                // (Key is there to avoid recomposition)
+                LaunchedEffect(1) { createMidnightAlarms() }
 
-                // No longer setting up notifications when app starts, instead happens during midnight 'alarm' and TODO on system boot
+                // No longer setting up notifications when app starts, instead happens when the todoObject is first created/edited, during midnight 'alarm', TODO on system boot
 
                 val onNewTodoRequested =
                     {
@@ -225,21 +276,18 @@ class MainActivity : ComponentActivity() {
 }
 
 fun createNotificationChannel(context: Context) {
-    // Create the NotificationChannel, but only on API 26+ because
-    // the NotificationChannel class is not in the Support Library.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val id = getString(context, R.string.channel_id)
-        val name = getString(context, R.string.channel_name)
-        val descriptionText = getString(context, R.string.channel_description)
-        val importance = NotificationManager.IMPORTANCE_DEFAULT
-        val channel = NotificationChannel(id, name, importance).apply {
-            description = descriptionText
-        }
-        // Register the channel with the system.
-        val notificationManager: NotificationManager =
-            getSystemService(context, NotificationManager::class.java) as NotificationManager
-        notificationManager.createNotificationChannel(channel)
+    // Create the NotificationChannel
+    val id = getString(context, R.string.channel_id)
+    val name = getString(context, R.string.channel_name)
+    val descriptionText = getString(context, R.string.channel_description)
+    val importance = NotificationManager.IMPORTANCE_DEFAULT
+    val channel = NotificationChannel(id, name, importance).apply {
+        description = descriptionText
     }
+    // Register the channel with the system.
+    val notificationManager: NotificationManager =
+        getSystemService(context, NotificationManager::class.java) as NotificationManager
+    notificationManager.createNotificationChannel(channel)
 }
 
 fun getTodoFromListById(todoList: List<Todo>, id: Int): Pair<Int, Todo?> {
