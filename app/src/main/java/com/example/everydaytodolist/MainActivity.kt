@@ -1,11 +1,8 @@
 package com.example.everydaytodolist
 
-import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,7 +21,6 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat.getString
 import androidx.core.content.ContextCompat.getSystemService
-import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -35,20 +31,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.everydaytodolist.alarms.MidnightAlarm
-import com.example.everydaytodolist.data.Todo
+import com.example.everydaytodolist.data.ITodo
 import com.example.everydaytodolist.data.TodoListUtil
 import com.example.everydaytodolist.data.TodoSorter
-import com.example.everydaytodolist.receivers.AlarmReceiver
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
 import com.example.everydaytodolist.ui.screens.ListView
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
-import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
 import java.io.File
-import java.util.Calendar
-import kotlin.system.measureTimeMillis
 
 val Context.preferencesDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 /* TODO Upgrade todo storage to protoDataStore
@@ -86,7 +75,7 @@ class MainActivity : ComponentActivity() {
                             File(
                                 context.filesDir,
                                 storageFilename
-                            )) ?: listOf<Todo>())
+                            )) ?: listOf<ITodo>())
                             .toMutableStateList()
                         TodoSorter.sort(list, sortedBy)
                         list
@@ -124,7 +113,7 @@ class MainActivity : ComponentActivity() {
                         var (index, todo) = getTodoFromListById(todoList, todoId)
                         if(todo != null) {
                             todoList.removeAt(index)
-                            todo = Todo.copy(todo)
+                            todo = todo.clone() as ITodo
                             todo.markCompleted()
                             todoList.add(index, todo)
                             TodoSorter.sort(todoList, sortedBy)
@@ -137,7 +126,7 @@ class MainActivity : ComponentActivity() {
                         var (index, todo) = getTodoFromListById(todoList, todoId)
                         if(todo != null){
                             todoList.removeAt(index)
-                            todo = Todo.copy(todo)
+                            todo = todo.clone() as ITodo
                             todo.snooze(snoozeLength ?: 1)
                             todoList.add(index, todo)
                             TodoSorter.sort(todoList, sortedBy)
@@ -248,9 +237,9 @@ fun createNotificationChannel(context: Context) {
     notificationManager.createNotificationChannel(channel)
 }
 
-fun getTodoFromListById(todoList: List<Todo>, id: Int): Pair<Int, Todo?> {
+fun getTodoFromListById(todoList: List<ITodo>, id: Int): Pair<Int, ITodo?> {
     for ((i,todo) in todoList.withIndex()) {
-        if (todo.getUniqueId() == id) {
+        if (todo.uniqueId == id) {
             return Pair(i,todo)
         }
     }

@@ -23,25 +23,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.fromColorLong
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.everydaytodolist.R
-import com.example.everydaytodolist.data.Todo
+import com.example.everydaytodolist.data.DailyTodo
+import com.example.everydaytodolist.data.ITodo
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import com.example.everydaytodolist.ui.theme.ExtendedTheme
 import java.time.LocalTime
 
 @Composable
 fun ListItem(
-    data: Todo,
+    data: ITodo,
     onEditClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
     onCompletedClicked: () -> Unit,
@@ -62,7 +61,7 @@ fun ListItem(
     var onBackgroundColor = MaterialTheme.colorScheme.onPrimary
     var buttonColor = MaterialTheme.colorScheme.primaryContainer
     var onButtonColor = MaterialTheme.colorScheme.onPrimaryContainer
-    when(data.timesSnoozedSinceLastCompletion) {
+    when(data.getTimesSnoozedSinceLastCompletion()) {
         in Int.MIN_VALUE..0 -> {}
         in 1..2 -> {
             backgroundColor = ExtendedTheme.colorScheme.snoozed.color
@@ -103,15 +102,15 @@ fun ListItem(
                         .padding(8.dp)
                 ) {
                     val titleString = data.title
-                    val frequencyString = when (data.frequencyInDays) {
+                    val frequencyString = when (data.frequency) {
                         1 -> stringResource(R.string.frequency_one_day)
                         else -> stringResource(
                             R.string.frequency_multiple_days,
-                            data.frequencyInDays
+                            data.frequency
                         )
                     }
                     val nextOccurrenceString = DateFormat.getPatternInstance(DateFormat.MONTH_DAY)
-                        .format(data.getNextOccurrenceTime())
+                        .format(data.getNextOccurrence())
 
                     Text(
                         titleString,
@@ -220,7 +219,7 @@ fun ListItem(
 @Preview()
 @Composable
 fun ListItemPreview() {
-    val sampleData = Todo("Clean Dishes", 1, LocalTime.of(9, 0))
+    val sampleData = DailyTodo("Clean Dishes", 1, LocalTime.of(9, 0))
 
     EverydayToDoListTheme {
         Surface() {
@@ -232,7 +231,7 @@ fun ListItemPreview() {
 @Preview()
 @Composable
 fun ListItemCompletedPreview() {
-    val sampleData = Todo("Clean Dishes Very Thoroughly", 1, LocalTime.of(9, 0))
+    val sampleData = DailyTodo("Clean Dishes Very Thoroughly", 1, LocalTime.of(9, 0))
     sampleData.markCompleted()
 
     EverydayToDoListTheme {
@@ -245,7 +244,7 @@ fun ListItemCompletedPreview() {
 @Preview()
 @Composable
 fun ListItemSnoozedPreview() {
-    val sampleData = Todo("Clean Dishes", 1, LocalTime.of(9, 0))
+    val sampleData = DailyTodo("Clean Dishes", 1, LocalTime.of(9, 0))
     sampleData.snooze()
 
     EverydayToDoListTheme {
@@ -258,7 +257,7 @@ fun ListItemSnoozedPreview() {
 @Preview()
 @Composable
 fun ListItemOversnoozedPreview() {
-    val sampleData = Todo("Clean Dishes", 1, LocalTime.of(9, 0))
+    val sampleData = DailyTodo("Clean Dishes", 1, LocalTime.of(9, 0))
     sampleData.snooze()
     sampleData.snooze()
     sampleData.snooze()

@@ -4,19 +4,19 @@ import android.app.Notification
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import com.example.everydaytodolist.R
-import com.example.everydaytodolist.data.Todo
+import com.example.everydaytodolist.data.ITodo
 
 class NotificationFactory(
     private val context: Context
 ) {
-    fun createTodoDue(data: Todo): Notification {
+    fun createTodoDue(data: ITodo): Notification {
         val builder = NotificationCompat.Builder(context, "Todo")
             .setSmallIcon(R.drawable.alarm_notification)
             .setContentTitle(data.title)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(Notification.CATEGORY_REMINDER)
             .setAutoCancel(true)
-            .setWhen(data.getNextOccurrenceTime().time)
+            .setWhen(data.getNextOccurrence().time)
         val notification = builder.build()
         return notification
     }

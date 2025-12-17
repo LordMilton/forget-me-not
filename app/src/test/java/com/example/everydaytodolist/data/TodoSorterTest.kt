@@ -11,12 +11,12 @@ import kotlin.reflect.jvm.isAccessible
 class TodoSorterTest {
 
     // Test data declarations
-    private lateinit var todoA: Todo // Due earliest, snoozed most, created earliest, title "A"
-    private lateinit var todoZ: Todo // Due middle, snoozed least, created middle, title "Z"
-    private lateinit var todoM: Todo // Due latest, snoozed middle, created latest, title "M"
-    private lateinit var todoK: Todo // Same snooze count as todoM, but due earlier, title "K"
+    private lateinit var todoA: DailyTodo // Due earliest, snoozed most, created earliest, title "A"
+    private lateinit var todoZ: DailyTodo // Due middle, snoozed least, created middle, title "Z"
+    private lateinit var todoM: DailyTodo // Due latest, snoozed middle, created latest, title "M"
+    private lateinit var todoK: DailyTodo // Same snooze count as todoM, but due earlier, title "K"
 
-    private lateinit var toBeSortedList: MutableList<Todo>
+    private lateinit var toBeSortedList: MutableList<ITodo>
 
     /* Helper function to modify private properties for testing */
     private fun <T: Any> T.setPrivateProperty(name: String, value: Any?) {
@@ -32,34 +32,51 @@ class TodoSorterTest {
     @Before
     fun setUp() {
         // --- Create Base Todos using the correct constructor ---
-        // uniqueId is managed by the Todo class constructor, so we don't need to specify it
-        // to get sequential IDs.
-        todoA = Todo(title = "A Task", frequencyInDays = 1, alarmTime = LocalTime.NOON)
-        todoZ = Todo(title = "Z Task", frequencyInDays = 1, alarmTime = LocalTime.NOON)
-        todoK = Todo(title = "K Task", frequencyInDays = 1, alarmTime = LocalTime.NOON)
-        todoM = Todo(title = "M Task", frequencyInDays = 1, alarmTime = LocalTime.NOON)
-
-        // --- Set up test conditions using reflection ---
         val time1 = 100000000L // Earliest
         val time2 = 200000000L
         val time3 = 300000000L
         val time4 = 400000000L // Latest
 
         // todoA: Due middle, Snoozed Most
-        todoA.setPrivateProperty("nextOccurrence", Calendar.getInstance().apply { timeInMillis = time2 })
-        todoA.setPrivateProperty("timesSnoozedSinceLastCompletion", 5)
-
+        todoA = DailyTodo(
+            title = "A Task",
+            frequency = 1,
+            alarmTime = LocalTime.NOON,
+            uniqueId = 1,
+            lastOccurrence = Calendar.getInstance(),
+            nextOccurrence = Calendar.getInstance().apply { timeInMillis = time2 },
+            timesSnoozedSinceLastCompletion = 5
+        )
         // todoZ: Due second-latest, Snoozed Least
-        todoZ.setPrivateProperty("nextOccurrence", Calendar.getInstance().apply { timeInMillis = time3 })
-        todoZ.setPrivateProperty("timesSnoozedSinceLastCompletion", 0)
-
+        todoZ = DailyTodo(
+            title = "Z Task",
+            frequency = 1,
+            alarmTime = LocalTime.NOON,
+            uniqueId = 2,
+            lastOccurrence = Calendar.getInstance(),
+            nextOccurrence = Calendar.getInstance().apply { timeInMillis = time3 },
+            timesSnoozedSinceLastCompletion = 0
+        )
         // todoK: Due earliest, Snoozed Middle
-        todoK.setPrivateProperty("nextOccurrence", Calendar.getInstance().apply { timeInMillis = time1 })
-        todoK.setPrivateProperty("timesSnoozedSinceLastCompletion", 2)
-
+        todoK = DailyTodo(
+            title = "K Task",
+            frequency = 1,
+            alarmTime = LocalTime.NOON,
+            uniqueId = 3,
+            lastOccurrence = Calendar.getInstance(),
+            nextOccurrence = Calendar.getInstance().apply { timeInMillis = time1 },
+            timesSnoozedSinceLastCompletion = 2
+        )
         // todoM: Due latest, Snoozed Middle (same as K)
-        todoM.setPrivateProperty("nextOccurrence", Calendar.getInstance().apply { timeInMillis = time4 })
-        todoM.setPrivateProperty("timesSnoozedSinceLastCompletion", 2)
+        todoM = DailyTodo(
+            title = "M Task",
+            frequency = 1,
+            alarmTime = LocalTime.NOON,
+            uniqueId = 4,
+            lastOccurrence = Calendar.getInstance(),
+            nextOccurrence = Calendar.getInstance().apply { timeInMillis = time4 },
+            timesSnoozedSinceLastCompletion = 2
+        )
 
         toBeSortedList = mutableListOf(todoA, todoZ, todoK, todoM)
     }

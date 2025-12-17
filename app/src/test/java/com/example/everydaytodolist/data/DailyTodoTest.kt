@@ -5,36 +5,36 @@ import org.junit.Assert.*
 import org.junit.Test
 import java.time.LocalTime
 
-class TodoTest {
+class DailyTodoTest {
 
     @Test
     fun `constructor initializes with default values`() {
-        // When a Todo is created with no arguments
-        val todo = Todo()
+        // When a DailyTodo is created with no arguments
+        val todo = DailyTodo()
 
         // Then it should have the default properties
         assertEquals("New Todo", todo.title)
-        assertEquals(1, todo.frequencyInDays)
+        assertEquals(1, todo.frequency)
         assertEquals(LocalTime.of(9, 0), todo.alarmTime)
-        assertEquals(0, todo.timesSnoozedSinceLastCompletion)
+        assertEquals(0, todo.getTimesSnoozedSinceLastCompletion())
     }
 
     @Test
     fun `constructor initializes with provided values`() {
-        // When a Todo is created with specific arguments
+        // When a DailyTodo is created with specific arguments
         val alarm = LocalTime.of(15, 30)
-        val todo = Todo(title = "Test Task", frequencyInDays = 5, alarmTime = alarm)
+        val todo = DailyTodo(title = "Test Task", frequency = 5, alarmTime = alarm)
 
         // Then it should have the provided properties
         assertEquals("Test Task", todo.title)
-        assertEquals(5, todo.frequencyInDays)
+        assertEquals(5, todo.frequency)
         assertEquals(alarm, todo.alarmTime)
     }
 
     @Test
     fun `completedToday returns false for a new todo`() {
-        // Given a newly created Todo
-        val todo = Todo()
+        // Given a newly created DailyTodo
+        val todo = DailyTodo()
 
         // When we check if it was completed today
         // Then the result should be false, as its last occurrence is initialized to yesterday
@@ -43,10 +43,10 @@ class TodoTest {
 
     @Test
     fun `markCompleted sets lastOccurrence to today and resets snoozes`() {
-        // Given a todo that has been snoozed
-        val todo = Todo()
+        // Given a DailyTodo that has been snoozed
+        val todo = DailyTodo()
         todo.snooze(2) // Snooze for 2 days
-        assertEquals(1, todo.timesSnoozedSinceLastCompletion)
+        assertEquals(1, todo.getTimesSnoozedSinceLastCompletion())
 
         // When markCompleted is called
         todo.markCompleted()
@@ -54,21 +54,21 @@ class TodoTest {
         // Then it should be marked as completed today
         assertTrue("Todo should be marked as completed today.", todo.completedToday())
         // And the snooze count should be reset
-        assertEquals("Snooze count should be reset to 0.", 0, todo.timesSnoozedSinceLastCompletion)
+        assertEquals("Snooze count should be reset to 0.", 0, todo.getTimesSnoozedSinceLastCompletion())
     }
 
     @Test
     fun `markCompleted updates nextOccurrence correctly`() {
-        // Given a todo with a frequency of 7 days and an alarm at 10:00
+        // Given a DailyTodo with a frequency of 7 days and an alarm at 10:00
         val alarmTime = LocalTime.of(10, 0)
-        val todo = Todo(frequencyInDays = 7, alarmTime = alarmTime)
+        val todo = DailyTodo(frequency = 7, alarmTime = alarmTime)
 
         // When it's marked as completed
         todo.markCompleted()
         val today = Calendar.getInstance()
 
         // Then the next occurrence should be 7 days from today at the specified alarm time
-        val nextOccurrence = todo.getNextOccurrenceTime()
+        val nextOccurrence = todo.getNextOccurrence()
         val expectedNextOccurrence = Calendar.getInstance().apply {
             time = today.time
             add(Calendar.DAY_OF_YEAR, 7)
@@ -86,127 +86,134 @@ class TodoTest {
 
     @Test
     fun `changing alarmTime changes nextOccurrence`() {
-        // Given a todo
-        val todo = Todo(frequencyInDays = 1, alarmTime = LocalTime.of(9, 0))
-        val initialNextOccurrence = todo.getNextOccurrenceTime()
+        // Given a DailyTodo
+        val todo = DailyTodo(frequency = 1, alarmTime = LocalTime.of(9, 0))
+        val initialNextOccurrence = todo.getNextOccurrence()
 
-        // When the todo alarmTime is changed
+        // When the DailyTodo alarmTime is changed
         val newAlarmTime = LocalTime.of(12, 30)
-        todo.alarmTime = newAlarmTime
+        val alteredTodo = DailyTodo(
+            todo.title,
+            todo.frequency,
+            newAlarmTime,
+            todo.uniqueId,
+            Calendar.getInstance().apply { time = todo.getLastOccurrence() },
+            Calendar.getInstance().apply { time = todo.getNextOccurrence() },
+            todo.getTimesSnoozedSinceLastCompletion()
+        )
 
         // Then the alarmTime should be changed
-        assertEquals(newAlarmTime, todo.alarmTime)
+        assertEquals(newAlarmTime, alteredTodo.alarmTime)
 
         // And the next occurrence should be the same day as before but with the new alarmTime
         val expectedNextOccurrence = Calendar.getInstance().apply {
             set(Calendar.DAY_OF_YEAR, getCalendarField(initialNextOccurrence, Calendar.DAY_OF_YEAR))
-            set(Calendar.HOUR, newAlarmTime.hour)
+            set(Calendar.HOUR_OF_DAY, newAlarmTime.hour)
             set(Calendar.MINUTE, newAlarmTime.minute)
         }
-        val newNextOccurrence = todo.getNextOccurrenceTime()
+        val newNextOccurrence = alteredTodo.getNextOccurrence()
 
         assertEquals(expectedNextOccurrence.get(Calendar.DAY_OF_YEAR), getCalendarField(newNextOccurrence, Calendar.DAY_OF_YEAR))
-        assertEquals(expectedNextOccurrence.get(Calendar.HOUR), getCalendarField(newNextOccurrence, Calendar.HOUR))
+        assertEquals(expectedNextOccurrence.get(Calendar.HOUR_OF_DAY), getCalendarField(newNextOccurrence, Calendar.HOUR_OF_DAY))
         assertEquals(expectedNextOccurrence.get(Calendar.MINUTE), getCalendarField(newNextOccurrence, Calendar.MINUTE))
     }
 
     @Test
     fun `snooze increments snooze count and delays nextOccurrence`() {
-        // Given a todo
-        val todo = Todo()
-        val initialNextOccurrence = todo.getNextOccurrenceTime()
+        // Given a DailyTodo
+        val todo = DailyTodo()
+        val initialNextOccurrence = todo.getNextOccurrence()
 
-        // When the todo is snoozed for 3 days
+        // When the DailyTodo is snoozed for 3 days
         val snoozeLength = 3
         todo.snooze(snoozeLength)
 
         // Then the snooze count should increase
-        assertEquals(1, todo.timesSnoozedSinceLastCompletion)
+        assertEquals(1, todo.getTimesSnoozedSinceLastCompletion())
 
         // And the next occurrence should be postponed by 3 days
         val expectedNextOccurrence = Calendar.getInstance().apply {
             time = initialNextOccurrence
             add(Calendar.DAY_OF_YEAR, snoozeLength)
         }
-        val newNextOccurrence = todo.getNextOccurrenceTime()
+        val newNextOccurrence = todo.getNextOccurrence()
 
         assertEquals(expectedNextOccurrence.get(Calendar.DAY_OF_YEAR), getCalendarField(newNextOccurrence, Calendar.DAY_OF_YEAR))
     }
 
     @Test
     fun `snooze delays even further when used multiple times`() {
-        // Given a todo
-        var todo = Todo()
-        val initialNextOccurrence = todo.getNextOccurrenceTime()
+        // Given a DailyTodo
+        var todo = DailyTodo()
+        val initialNextOccurrence = todo.getNextOccurrence()
 
-        // When the todo is snoozed for 1 day, twice
+        // When the DailyTodo is snoozed for 1 day, twice
         val snoozeLength = 1
         val snoozeCount = 2
         repeat(snoozeCount) {
             todo.snooze(snoozeLength)
             // Copying has to happen to force recomposition in the real app, so make sure it doesn't cause weird things here too
-            todo = Todo.copy(todo)
+            todo = todo.clone() as DailyTodo
         }
 
         // Then the snooze count should increase twice
-        assertEquals(2, todo.timesSnoozedSinceLastCompletion)
+        assertEquals(2, todo.getTimesSnoozedSinceLastCompletion())
 
         // And the next occurrence should be postponed by the snooze amount twice
         val expectedNextOccurrence = Calendar.getInstance().apply {
             time = initialNextOccurrence
             add(Calendar.DAY_OF_YEAR, snoozeLength * snoozeCount)
         }
-        val newNextOccurrence = todo.getNextOccurrenceTime()
+        val newNextOccurrence = todo.getNextOccurrence()
 
         assertEquals(expectedNextOccurrence.get(Calendar.DAY_OF_YEAR), getCalendarField(newNextOccurrence, Calendar.DAY_OF_YEAR))
     }
 
     @Test
     fun `snooze with default length uses 1 day`() {
-        // Given a todo
-        val todo = Todo()
-        val initialNextOccurrence = todo.getNextOccurrenceTime()
+        // Given a DailyTodo
+        val todo = DailyTodo()
+        val initialNextOccurrence = todo.getNextOccurrence()
 
-        // When the todo is snoozed with the default length
+        // When the DailyTodo is snoozed with the default length
         todo.snooze() // Default is 1 day
 
         // Then the snooze count should increase
-        assertEquals(1, todo.timesSnoozedSinceLastCompletion)
+        assertEquals(1, todo.getTimesSnoozedSinceLastCompletion())
 
         // And the next occurrence should be postponed by 1 day
         val expectedNextOccurrence = Calendar.getInstance().apply {
             time = initialNextOccurrence
             add(Calendar.DAY_OF_YEAR, 1)
         }
-        val newNextOccurrence = todo.getNextOccurrenceTime()
+        val newNextOccurrence = todo.getNextOccurrence()
 
         assertEquals(expectedNextOccurrence.get(Calendar.DAY_OF_YEAR), getCalendarField(newNextOccurrence, Calendar.DAY_OF_YEAR))
     }
 
     @Test
-    fun `Factory copy creates a deep enough copy`() {
-        // Given an original todo
-        val original = Todo("Original Task", 10, LocalTime.of(12, 0))
+    fun `Clone creates a deep enough copy`() {
+        // Given an original DailyTodo
+        val original = DailyTodo("Original Task", 10, LocalTime.of(12, 0))
         original.markCompleted()
         original.snooze(2)
 
         // When a copy is made
-        val copy = Todo.Factory.copy(original)
+        val copy = original.clone() as DailyTodo
 
         // Then the copy should have the same properties as the original
         assertEquals(original.title, copy.title)
-        assertEquals(original.frequencyInDays, copy.frequencyInDays)
+        assertEquals(original.frequency, copy.frequency)
         assertEquals(original.alarmTime, copy.alarmTime)
-        assertEquals(original.getUniqueId(), copy.getUniqueId())
-        assertEquals(original.timesSnoozedSinceLastCompletion, copy.timesSnoozedSinceLastCompletion)
-        assertEquals(original.getLastOccurrenceTime(), copy.getLastOccurrenceTime())
+        assertEquals(original.uniqueId, copy.uniqueId)
+        assertEquals(original.getTimesSnoozedSinceLastCompletion(), copy.getTimesSnoozedSinceLastCompletion())
+        assertEquals(original.getLastOccurrence(), copy.getLastOccurrence())
 
         // And when the copy is modified, the original should not be affected
-        copy.title = "Modified Task"
         copy.markCompleted()
 
-        assertNotEquals("Modifying copy's title should not change original's title.", original.title, copy.title)
-        assertNotEquals("Modifying copy's last occurrence should not change original's.", original.getLastOccurrenceTime(), copy.getLastOccurrenceTime())
+        assertNotEquals("Marking copy completed should not reset original's snoozes.", original.getTimesSnoozedSinceLastCompletion(), copy.getTimesSnoozedSinceLastCompletion())
+        assertNotEquals("Modifying copy's last occurrence should not change original's.", original.getLastOccurrence(), copy.getLastOccurrence())
     }
 
     // Helper function to convert Date to Calendar and get a field

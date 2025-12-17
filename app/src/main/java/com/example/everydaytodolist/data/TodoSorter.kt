@@ -11,21 +11,21 @@ class TodoSorter {
     }
 
     companion object Factory {
-        val dueDateComparator = Comparator { todo1: Todo, todo2: Todo ->
-            (todo1.getNextOccurrenceTime().time - todo2.getNextOccurrenceTime().time).toInt()
+        val dueDateComparator = Comparator { todo1: ITodo, todo2: ITodo ->
+            (todo1.getNextOccurrence().time - todo2.getNextOccurrence().time).toInt()
         }
-        val snoozeComparator = Comparator { todo1: Todo, todo2: Todo ->
-            todo1.timesSnoozedSinceLastCompletion - todo2.timesSnoozedSinceLastCompletion
+        val snoozeComparator = Comparator { todo1: ITodo, todo2: ITodo ->
+            todo1.getTimesSnoozedSinceLastCompletion() - todo2.getTimesSnoozedSinceLastCompletion()
         }.then(dueDateComparator)
-        val createdComparator = Comparator { todo1: Todo, todo2: Todo ->
-            todo1.getUniqueId() - todo2.getUniqueId()
+        val createdComparator = Comparator { todo1: ITodo, todo2: ITodo ->
+            todo1.uniqueId - todo2.uniqueId
         }
-        val titleComparator = Comparator { todo1: Todo, todo2: Todo ->
+        val titleComparator = Comparator { todo1: ITodo, todo2: ITodo ->
             todo1.title.compareTo(todo2.title, ignoreCase = true)
         }
 
 
-        fun sort(todoList: MutableList<Todo>, method: SortMethod, reversed: Boolean = false) {
+        fun sort(todoList: MutableList<ITodo>, method: SortMethod, reversed: Boolean = false) {
             val comparator = when(method) {
                 SortMethod.DUE_DATE -> dueDateComparator
                 SortMethod.SNOOZE_COUNT -> snoozeComparator

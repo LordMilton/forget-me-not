@@ -3,7 +3,6 @@ package com.example.everydaytodolist.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -18,30 +17,29 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.everydaytodolist.data.Todo
+import com.example.everydaytodolist.data.DailyTodo
+import com.example.everydaytodolist.data.ITodo
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTaskComposable(
-    data: Todo?,
-    onSave: (Todo) -> Unit,
+    data: ITodo?,
+    onSave: (ITodo) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val editingNewTodo = (data == null)
-    var taskName by remember { mutableStateOf(data?.title ?: Todo.defaultName) }
-    var frequencyString by remember { mutableStateOf((data?.frequencyInDays ?: Todo.defaultFrequency).toString()) }
-    var alarmTime by remember { mutableStateOf(data?.alarmTime ?: Todo.defaultAlarmTime) }
+    var taskName by remember { mutableStateOf(data?.title ?: ITodo.defaultName) }
+    var frequencyString by remember { mutableStateOf((data?.frequency ?: ITodo.defaultFrequency).toString()) }
+    var alarmTime by remember { mutableStateOf(data?.alarmTime ?: ITodo.defaultAlarmTime) }
     // Need this dedicated state for the TimePicker
     var timePickerState = rememberTimePickerState(
         initialHour = alarmTime.hour,
@@ -158,16 +156,21 @@ fun EditTaskComposable(
             }
             Button(
                 onClick = {
-                    var newTodo: Todo
+                    var newTodo: ITodo
                     when(editingNewTodo){
                         true -> {
-                            newTodo = Todo(taskName, frequencyString.toInt(), alarmTime)
+                            newTodo = DailyTodo(taskName, frequencyString.toInt(), alarmTime)
                         }
                         false -> {
-                            newTodo = Todo.copy(data)
-                            newTodo.title = taskName
-                            newTodo.frequencyInDays = frequencyString.toInt()
-                            newTodo.alarmTime = alarmTime
+                            newTodo = DailyTodo(
+                                title = taskName,
+                                frequency = frequencyString.toInt(),
+                                alarmTime = alarmTime,
+                                uniqueId = data.uniqueId,
+                                nextOccurrence = Calendar.getInstance().apply { time = data.getNextOccurrence() },
+                                lastOccurrence = Calendar.getInstance().apply { time = data.getLastOccurrence() },
+                                timesSnoozedSinceLastCompletion = data.getTimesSnoozedSinceLastCompletion()
+                            )
                         }
                     }
                     onSave(newTodo)
@@ -221,7 +224,7 @@ fun EditTaskComposablePreview() {
     var taskName by remember { mutableStateOf("Do Laundry") }
     var frequency by remember { mutableIntStateOf(1) }
     var time by remember { mutableStateOf(LocalTime.of(18, 0)) }
-    val data = Todo(taskName, frequency, time)
+    val data = DailyTodo(taskName, frequency, time)
 
     EverydayToDoListTheme {
         Surface(
