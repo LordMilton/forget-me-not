@@ -97,9 +97,12 @@ class DailyTodoTest {
             todo.frequency,
             newAlarmTime,
             todo.uniqueId,
+            todo.maxOccurrences,
+            todo.endDate,
             Calendar.getInstance().apply { time = todo.getLastOccurrence() },
             Calendar.getInstance().apply { time = todo.getNextOccurrence() },
-            todo.getTimesSnoozedSinceLastCompletion()
+            todo.getTimesSnoozedSinceLastCompletion(),
+            todo.getNumOccurrences()
         )
 
         // Then the alarmTime should be changed

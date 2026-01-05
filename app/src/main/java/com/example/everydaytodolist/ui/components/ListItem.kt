@@ -94,8 +94,8 @@ fun ListItem(
                 expanded = !expanded
             }
     ) {
-        Column() {
-            Row() {
+        Column {
+            Row {
                 Column(
                     Modifier
                         .weight(.72f)

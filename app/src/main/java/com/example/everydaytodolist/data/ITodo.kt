@@ -9,12 +9,15 @@ interface ITodo: Cloneable {
     val frequency: Int
     val alarmTime: LocalTime
     val uniqueId: Int
+    val maxOccurrences: Int?
+    val endDate: Calendar?
 
     // Can't have last/nextOccurrence in here due to secondary constructor needing them to be vars
     //   and I'm not letting them be public
     // Kinda screws up DRY for any repeated functions requiring them, but alas
     fun getLastOccurrence(): Date
     fun getNextOccurrence(): Date
+    fun getNumOccurrences(): Int
 
     fun getTimesSnoozedSinceLastCompletion(): Int
 
@@ -22,7 +25,12 @@ interface ITodo: Cloneable {
     fun dueBeforeToday(): Boolean
     fun completedToday(): Boolean
 
-    fun markCompleted()
+    /**
+     * Marks the TodoObject as completed today
+     *
+     * @return True if the TodoObject should be repeated again, False otherwise
+     */
+    fun markCompleted(): Boolean
     fun snooze(snoozeLength: Int = 1)
 
     fun snoozeUntil(calendarDate: Calendar, matchAlarmTime: Boolean = true)

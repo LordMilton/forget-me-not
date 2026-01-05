@@ -114,8 +114,10 @@ class MainActivity : ComponentActivity() {
                         if(todo != null) {
                             todoList.removeAt(index)
                             todo = todo.clone() as ITodo
-                            todo.markCompleted()
-                            todoList.add(index, todo)
+                            val repeat = todo.markCompleted()
+                            if(repeat) {
+                                todoList.add(index, todo)
+                            }
                             TodoSorter.sort(todoList, sortedBy)
                         } else {
                             println("Tried to mark a nonexistent todo as completed with id $todoId")

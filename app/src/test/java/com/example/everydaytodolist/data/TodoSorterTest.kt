@@ -43,9 +43,12 @@ class TodoSorterTest {
             frequency = 1,
             alarmTime = LocalTime.NOON,
             uniqueId = 1,
+            maxOccurrences = null,
+            endDate = null,
             lastOccurrence = Calendar.getInstance(),
             nextOccurrence = Calendar.getInstance().apply { timeInMillis = time2 },
-            timesSnoozedSinceLastCompletion = 5
+            timesSnoozedSinceLastCompletion = 5,
+            numOccurrences = 0
         )
         // todoZ: Due second-latest, Snoozed Least
         todoZ = DailyTodo(
@@ -53,9 +56,12 @@ class TodoSorterTest {
             frequency = 1,
             alarmTime = LocalTime.NOON,
             uniqueId = 2,
+            maxOccurrences = null,
+            endDate = null,
             lastOccurrence = Calendar.getInstance(),
             nextOccurrence = Calendar.getInstance().apply { timeInMillis = time3 },
-            timesSnoozedSinceLastCompletion = 0
+            timesSnoozedSinceLastCompletion = 0,
+            numOccurrences = 0
         )
         // todoK: Due earliest, Snoozed Middle
         todoK = DailyTodo(
@@ -63,9 +69,12 @@ class TodoSorterTest {
             frequency = 1,
             alarmTime = LocalTime.NOON,
             uniqueId = 3,
+            maxOccurrences = null,
+            endDate = null,
             lastOccurrence = Calendar.getInstance(),
             nextOccurrence = Calendar.getInstance().apply { timeInMillis = time1 },
-            timesSnoozedSinceLastCompletion = 2
+            timesSnoozedSinceLastCompletion = 2,
+            numOccurrences = 0
         )
         // todoM: Due latest, Snoozed Middle (same as K)
         todoM = DailyTodo(
@@ -73,9 +82,12 @@ class TodoSorterTest {
             frequency = 1,
             alarmTime = LocalTime.NOON,
             uniqueId = 4,
+            maxOccurrences = null,
+            endDate = null,
             lastOccurrence = Calendar.getInstance(),
             nextOccurrence = Calendar.getInstance().apply { timeInMillis = time4 },
-            timesSnoozedSinceLastCompletion = 2
+            timesSnoozedSinceLastCompletion = 2,
+            numOccurrences = 0
         )
 
         toBeSortedList = mutableListOf(todoA, todoZ, todoK, todoM)
