@@ -48,7 +48,7 @@ class TodoListUtil {
             try {
                 file.forEachLine { line ->
                     println(line)
-                    // Line format: DailyTodo(title='...', frequencyInDays=..., alarmTime=..., uniqueId=..., nextOccurrence=..., lastOccurrence=..., timesSnoozedSinceLastCompletion=...)
+                    // Line format: DailyTodo(title='...', frequencyInDays=..., alarmTime=..., uniqueId=..., maxOccurrences=..., endDate=..., nextOccurrence=..., lastOccurrence=..., timesSnoozedSinceLastCompletion=...)
                     val todoTypeString = line.substringBefore("Todo")
                     val properties = line.substringAfter("Todo(").substringBeforeLast(")")
                     val propertyMap = properties.split(", ").associate {
@@ -69,6 +69,7 @@ class TodoListUtil {
                 }
             } catch (e: Exception) {
                 println("Could not read todos from internal storage: ${e.message}")
+                e.printStackTrace()
             }
             return todoList
         }

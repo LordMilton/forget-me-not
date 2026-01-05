@@ -1,6 +1,7 @@
 package com.example.everydaytodolist.ui.screens
 
 import android.icu.text.SimpleDateFormat
+import java.util.TimeZone
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -59,6 +60,7 @@ import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
+import java.util.Date
 
 private enum class EndType {
     NEVER,
@@ -209,7 +211,7 @@ fun EditTaskComposable(
                 datePickerHorScrollState = startDateScrollState,
                 onDatePickerConfirmed = {
                     startDate = Calendar.getInstance().apply {
-                        timeInMillis = startDatePickerState.selectedDateMillis ?: Calendar.getInstance().timeInMillis
+                        timeInMillis = fixDatePickerStateMillis(startDatePickerState.selectedDateMillis)
                     }
                     showStartDatePicker = false
                 },
@@ -274,7 +276,7 @@ fun EditTaskComposable(
                             datePickerHorScrollState = endDateScrollState,
                             onDatePickerConfirmed = {
                                 endDate = Calendar.getInstance().apply {
-                                    timeInMillis = endDatePickerState.selectedDateMillis ?: Calendar.getInstance().timeInMillis
+                                    timeInMillis = fixDatePickerStateMillis(endDatePickerState.selectedDateMillis)
                                 }
                                 showEndDatePicker = false
                             },
@@ -549,6 +551,12 @@ fun DatePickerTextFieldDisplay(
             )
         }
     }
+}
+
+fun fixDatePickerStateMillis(millis: Long?): Long {
+    val nonadjustedMillis = millis ?: Calendar.getInstance(TimeZone.getTimeZone("GMT+0")).timeInMillis
+    val adjustedMillis = nonadjustedMillis - TimeZone.getDefault().getOffset(Calendar.getInstance().timeInMillis)
+    return adjustedMillis
 }
 
 fun isFrequencyValid(frequencyString: String): Boolean {

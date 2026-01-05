@@ -180,14 +180,14 @@ class DailyTodo(
 
     override fun toString(): String {
         return "DailyTodo(title='$title', " +
-                "frequencyInDays=$frequency, " +
+                "frequency=$frequency, " +
                 "alarmTime=$alarmTime, " +
                 "uniqueId=$uniqueId, " +
                 "maxOccurrences=$maxOccurrences, " +
                 "endDate=${endDate?.timeInMillis}, " +
                 "nextOccurrence=${nextOccurrence.timeInMillis}, " +
                 "lastOccurrence=${lastOccurrence.timeInMillis}, " +
-                "timesSnoozedSinceLastCompletion=$timesSnoozedSinceLastCompletion), " +
+                "timesSnoozedSinceLastCompletion=$timesSnoozedSinceLastCompletion, " +
                 "numOccurrences=$numOccurrences" +
                 ")"
     }
@@ -195,29 +195,29 @@ class DailyTodo(
     override fun fromPropertiesMap(propertyMap: Map<String,String>): DailyTodo? {
         var parseIssue = false
 
-        val title = (propertyMap["title"]?.removeSurrounding("'") ?: { parseIssue = true; "New Todo" }) as String
-        val frequency = (propertyMap["frequencyInDays"]?.toIntOrNull() ?: { parseIssue = true; 1 }) as Int
-        val alarmTime = (propertyMap["alarmTime"]?.let { LocalTime.parse(it) } ?: { parseIssue = true; LocalTime.of(9, 0) }) as LocalTime
-        val uniqueId = (propertyMap["uniqueId"]?.toIntOrNull() ?: { parseIssue = true; ITodo.getNextUniqueId() }) as Int
-        val maxOccurrences = (propertyMap["maxOccurrences"]?.toIntOrNull() ?: {/*parseIssue = true*/ null }) as Int?
+        val title = (propertyMap["title"]?.removeSurrounding("'") ?: { println("Couldn't parse Todo Title"); parseIssue = true; "New Todo" }()) as String
+        val frequency = (propertyMap["frequency"]?.toIntOrNull() ?: { println("Couldn't parse Todo Frequency"); parseIssue = true; 1 }()) as Int
+        val alarmTime = (propertyMap["alarmTime"]?.let { LocalTime.parse(it) } ?: { println("Couldn't parse Todo Alarm Time"); parseIssue = true; LocalTime.of(9, 0) }()) as LocalTime
+        val uniqueId = (propertyMap["uniqueId"]?.toIntOrNull() ?: { println("Couldn't parse Todo Unique Id"); parseIssue = true; ITodo.getNextUniqueId() }()) as Int
+        val maxOccurrences = (propertyMap["maxOccurrences"]?.toIntOrNull() ?: { println("Couldn't parse Todo Max Occurrences (or it was indicated as null)"); /*parseIssue = true;*/ null }()) as Int?
         val endDate = {
-            val time = (propertyMap["endDate"]?.toLongOrNull() ?: { /*parseIssue = true*/; null }) as Long?
+            val time = (propertyMap["endDate"]?.toLongOrNull() ?: { println("Couldn't parse Todo End Date (or it was indicated as null)"); /*parseIssue = true;*/ null }()) as Long?
             val calendar = Calendar.getInstance()
             when(time) {
                 null -> null
                 else -> calendar.apply { timeInMillis = time }
             }
         }()
-        val timesSnoozed = (propertyMap["timesSnoozedSinceLastCompletion"]?.toIntOrNull() ?: { parseIssue = true; 0 }) as Int
+        val timesSnoozed = (propertyMap["timesSnoozedSinceLastCompletion"]?.toIntOrNull() ?: { println("Couldn't parse Todo Times Snoozed"); parseIssue = true; 0 }()) as Int
         val lastOccurrence = {
-            val time = (propertyMap["lastOccurrence"]?.toLongOrNull() ?: { parseIssue = true; 1 }) as Long
+            val time = (propertyMap["lastOccurrence"]?.toLongOrNull() ?: { println("Couldn't parse Todo Last Occurrence"); parseIssue = true; 1 }()) as Long
             Calendar.getInstance().apply { timeInMillis = time }
         }()
         val nextOccurrence = {
-            val time = (propertyMap["nextOccurrence"]?.toLongOrNull() ?: { parseIssue = true; 1 }) as Long
+            val time = (propertyMap["nextOccurrence"]?.toLongOrNull() ?: { println("Couldn't parse Todo Next Occurrence"); parseIssue = true; 1 }()) as Long
             Calendar.getInstance().apply { timeInMillis = time }
         }()
-        val numOccurrences = (propertyMap["numOccurrences"]?.toIntOrNull() ?: {/*parseIssue = true*/ 0 }) as Int
+        val numOccurrences = (propertyMap["numOccurrences"]?.toIntOrNull() ?: {println("Couldn't parse Todo Num Occurrences"); /*parseIssue = true*/ 0 }()) as Int
 
         return when(parseIssue) {
             true -> null
