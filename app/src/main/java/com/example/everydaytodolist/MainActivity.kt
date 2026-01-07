@@ -62,6 +62,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val storageFilename = this.resources.getString(R.string.todo_storage_file)
 
+        val initiatingIntent = getIntent()
+        val focusedTodoId = initiatingIntent.data?.lastPathSegment?.toIntOrNull() ?: -1
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -141,8 +143,9 @@ class MainActivity : ComponentActivity() {
                         TodoSorter.sort(todoList, sortMethod, reversed)
                         sortedBy = sortMethod
                     }
-                val todoListView: @Composable () -> Unit = { ListView(
+                val todoListView: @Composable (focusedTodoId: Int) -> Unit = { ListView(
                     todoList,
+                    focusedTodoId,
                     sortedBy,
                     onNewTodoRequested,
                     onTodoEditClicked,
@@ -162,8 +165,18 @@ class MainActivity : ComponentActivity() {
                         startDestination = "list_view",
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        composable(route = "list_view") {
-                            todoListView()
+                        composable(
+                            route = "list_view?todoId={todoId}",
+                            arguments = listOf(
+                                navArgument("todoId") {
+                                    NavType.IntType
+                                    defaultValue = -1
+                                }
+                            )
+                        ) { curBackStackEntry ->
+                            val arguments = curBackStackEntry.arguments
+                            val todoId = arguments?.getInt("todoId") ?: -1
+                            todoListView(todoId)
                         }
                         composable(
                             route = "editor_view?todoId={todoId}",
@@ -210,11 +223,11 @@ class MainActivity : ComponentActivity() {
                                     }
                                     else {
                                         println("Tried to edit a nonexistent todo with id $todoId")
-                                        todoListView() //TODO Indicate to the user that something went wrong
+                                        todoListView(-1) //TODO Indicate to the user that something went wrong
                                     }
                                 }
 
-                                else -> todoListView() //TODO Indicate to the user that something went wrong
+                                else -> todoListView(-1) //TODO Indicate to the user that something went wrong
                             }
                         }
                     }

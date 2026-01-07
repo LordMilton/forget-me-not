@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DropdownMenu
@@ -47,6 +48,7 @@ const val PARTY_POPPER_EMOJI = "\uD83C\uDF89"
 @Composable
 fun ListView(
     data: List<ITodo>,
+    focusedTodoId: Int,
     sortMethod: TodoSorter.SortMethod,
     onFabClicked: () -> Unit,
     onItemEditClicked: (Int) -> Unit,
@@ -57,6 +59,11 @@ fun ListView(
     modifier: Modifier = Modifier)
 {
     val dataComposables = turnDataIntoLazyComposableItems(data, sortMethod, onItemEditClicked, onItemDeleteClicked, onItemCompletedClicked, onItemSnoozeClicked)
+    val focusedTodoIndex = dataComposables.indexOfFirst({ it.uniqueId == focusedTodoId })
+    val todoListState = when(focusedTodoIndex) {
+        -1 -> rememberLazyListState()
+        else -> rememberLazyListState(initialFirstVisibleItemIndex = focusedTodoIndex)
+    }
     Box(modifier.fillMaxSize()) {
         Column() {
             // MENUBAR
@@ -128,6 +135,7 @@ fun ListView(
             }
             // LIST OF TODOS
             LazyColumn(
+                state = todoListState,
                 modifier = Modifier
             ) {
                 items(
@@ -341,6 +349,7 @@ fun TodoListSortedByDueDatePreview() {
     EverydayToDoListTheme {
         Scaffold { innerPadding ->
             ListView(exampleData,
+                -1,
                 sortMethod,
                 {},
                 {},
@@ -375,6 +384,7 @@ fun TodoListSortedByDueDateEmptyTodayPreview() {
     EverydayToDoListTheme {
         Scaffold { innerPadding ->
             ListView(exampleData,
+                -1,
                 sortMethod,
                 {},
                 {},
@@ -398,6 +408,7 @@ fun TodoListSortedByDueDateEmptyPreview() {
     EverydayToDoListTheme {
         Scaffold { innerPadding ->
             ListView(exampleData,
+                -1,
                 sortMethod,
                 {},
                 {},
@@ -434,6 +445,7 @@ fun TodoListSortedByCreationPreview() {
     EverydayToDoListTheme {
         Scaffold { innerPadding ->
             ListView(exampleData,
+                2,
                 sortMethod,
                 {},
                 {},
