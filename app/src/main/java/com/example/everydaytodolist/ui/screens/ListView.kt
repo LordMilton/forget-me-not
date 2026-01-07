@@ -254,21 +254,28 @@ fun listPlaceholderItem(displayText: String, itemId: Int): LazyComposableItem {
             Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            Box(
-                Modifier
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
                     .background(
                         color = MaterialTheme.colorScheme.tertiaryContainer,
                         shape = MaterialTheme.shapes.large
                     )
                     .padding(4.dp)
+                    .fillMaxWidth()
             ) {
+                Text(
+                    "$PARTY_POPPER_EMOJI$PARTY_POPPER_EMOJI$PARTY_POPPER_EMOJI",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.padding(top = 12.dp)
+                )
                 Text(
                     displayText,
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier
                         .padding(12.dp)
-                        .align(Alignment.Center)
                 )
             }
         }
@@ -276,11 +283,11 @@ fun listPlaceholderItem(displayText: String, itemId: Int): LazyComposableItem {
 }
 
 fun nothingDueTodayItem(): LazyComposableItem {
-    return listPlaceholderItem("$PARTY_POPPER_EMOJI Nothing Else Due Today $PARTY_POPPER_EMOJI", -2)
+    return listPlaceholderItem("Nothing Else Due Today", -2)
 }
 
 fun nothingToDoItem(): LazyComposableItem {
-    return listPlaceholderItem("$PARTY_POPPER_EMOJI Nothing left to do! $PARTY_POPPER_EMOJI", -4)
+    return listPlaceholderItem("Nothing left to do!", -4)
 }
 
 fun todoToLazyComposableItem(
