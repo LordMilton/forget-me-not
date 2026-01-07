@@ -12,7 +12,12 @@ class TodoSorter {
 
     companion object Factory {
         val dueDateComparator = Comparator { todo1: ITodo, todo2: ITodo ->
-            (todo1.getNextOccurrence().time - todo2.getNextOccurrence().time).toInt()
+            val todo1Time = todo1.getNextOccurrence().time
+            val todo2Time = todo2.getNextOccurrence().time
+            // Can't just do the math and convert to int (comparator needs an int), it overflows when there's only like a month difference
+            if(todo1Time > todo2Time)       1
+            else if(todo1Time < todo2Time) -1
+            else                            0
         }
         val snoozeComparator = Comparator { todo1: ITodo, todo2: ITodo ->
             todo1.getTimesSnoozedSinceLastCompletion() - todo2.getTimesSnoozedSinceLastCompletion()

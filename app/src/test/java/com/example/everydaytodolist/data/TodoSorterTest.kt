@@ -32,10 +32,10 @@ class TodoSorterTest {
     @Before
     fun setUp() {
         // --- Create Base Todos using the correct constructor ---
-        val time1 = 100000000L // Earliest
-        val time2 = 200000000L
-        val time3 = 300000000L
-        val time4 = 400000000L // Latest
+        val time1 = 1000000000000L // Earliest
+        val time2 = 2000000000000L
+        val time3 = 3000000000000L
+        val time4 = 4000000000000L // Latest
 
         // todoA: Due middle, Snoozed Most
         todoA = DailyTodo(
