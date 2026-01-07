@@ -29,6 +29,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.everydaytodolist.R
@@ -116,7 +117,11 @@ fun ListItem(
                         titleString,
                         color = onBackgroundColor,
                         style = titleTextStyle,
-                        maxLines = 2,
+                        maxLines = when(expanded) {
+                            true -> 10
+                            false -> 2
+                        },
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                     )
                     Text(
@@ -124,7 +129,6 @@ fun ListItem(
                         color = onBackgroundColor,
                         style = bodyTextStyle
                     )
-
                     Text(
                         "Next occurrence on $nextOccurrenceString",
                         color = onBackgroundColor,
@@ -244,7 +248,7 @@ fun ListItemCompletedPreview() {
 @Preview()
 @Composable
 fun ListItemSnoozedPreview() {
-    val sampleData = DailyTodo("Clean Dishes", 1, LocalTime.of(9, 0))
+    val sampleData = DailyTodo("Clean Dishes So Thoroughly That Dirt Will Never Even Consider Touching Them Again", 1, LocalTime.of(9, 0))
     sampleData.snooze()
 
     EverydayToDoListTheme {
