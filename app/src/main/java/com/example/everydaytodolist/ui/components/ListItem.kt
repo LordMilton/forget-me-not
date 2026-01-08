@@ -103,13 +103,19 @@ fun ListItem(
                         .padding(8.dp)
                 ) {
                     val titleString = data.title
-                    val frequencyString = when (data.frequency) {
-                        1 -> stringResource(R.string.frequency_one_day)
-                        else -> stringResource(
-                            R.string.frequency_multiple_days,
-                            data.frequency
-                        )
-                    }
+                    val frequencyString =
+                        if(data.maxOccurrences == 1) {
+                            stringResource(R.string.frequency_single_occurrence)
+                        }
+                        else {
+                            when (data.frequency) {
+                                1 -> stringResource(R.string.frequency_one_day)
+                                else -> stringResource(
+                                    R.string.frequency_multiple_days,
+                                    data.frequency
+                                )
+                            }
+                        }
                     val nextOccurrenceString = DateFormat.getPatternInstance(DateFormat.MONTH_DAY)
                         .format(data.getNextOccurrence())
 
@@ -261,7 +267,7 @@ fun ListItemSnoozedPreview() {
 @Preview()
 @Composable
 fun ListItemOversnoozedPreview() {
-    val sampleData = DailyTodo("Clean Dishes", 1, LocalTime.of(9, 0))
+    val sampleData = DailyTodo("Clean Dishes So Thoroughly That Dirt Will Never Even Consider Touching Them Again", 1, LocalTime.of(9, 0), maxOccurrences = 1)
     sampleData.snooze()
     sampleData.snooze()
     sampleData.snooze()
