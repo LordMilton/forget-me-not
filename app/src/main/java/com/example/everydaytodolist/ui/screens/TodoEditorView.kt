@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -50,9 +52,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.everydaytodolist.data.DailyTodo
 import com.example.everydaytodolist.data.ITodo
@@ -144,15 +148,15 @@ fun EditTaskComposable(
                 "Repeating"
             )
         }
-
         // Frequency Selection
         if(repeating) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
+                BasicText(
                     "Every",
                     style = MaterialTheme.typography.titleMedium,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = MaterialTheme.typography.titleMedium.fontSize),
                     modifier = Modifier
                         .padding(top = 5.dp, end = 8.dp)
                         .weight(.15F)
