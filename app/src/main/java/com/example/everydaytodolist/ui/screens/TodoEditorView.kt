@@ -52,7 +52,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -64,7 +63,6 @@ import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
-import java.util.Date
 
 private enum class EndType {
     NEVER,
@@ -435,7 +433,8 @@ fun EditTaskComposable(
                         else -> onSave(newTodo)
                     }
                 },
-                enabled = isFrequencyValid(frequencyString),
+                enabled = isFrequencyIrrelevantOrValid(repeating, frequencyString) &&
+                        isNumOccurrencesIrrelevantOrValid(repeating, endSelector, numOccurrencesString),
                 colors = buttonColors,
                 modifier = Modifier.padding(end = 8.dp)
             ) {
@@ -557,15 +556,28 @@ fun DatePickerTextFieldDisplay(
     }
 }
 
-fun fixDatePickerStateMillis(millis: Long?): Long {
+private fun fixDatePickerStateMillis(millis: Long?): Long {
     val nonadjustedMillis = millis ?: Calendar.getInstance(TimeZone.getTimeZone("GMT+0")).timeInMillis
     val adjustedMillis = nonadjustedMillis - TimeZone.getDefault().getOffset(Calendar.getInstance().timeInMillis)
     return adjustedMillis
 }
 
-fun isFrequencyValid(frequencyString: String): Boolean {
+private fun isFrequencyIrrelevantOrValid(isRepeating: Boolean, frequencyString: String): Boolean {
+    return !isRepeating || isFrequencyValid(frequencyString)
+}
+
+private fun isFrequencyValid(frequencyString: String): Boolean {
     val frequency = frequencyString.toIntOrNull() ?: -1
     return frequency >= 1
+}
+
+private fun isNumOccurrencesIrrelevantOrValid(isRepeating: Boolean, endType: EndType, numOccurrencesString: String): Boolean {
+    return !isRepeating || endType != EndType.NUM_OCCURRENCES || isNumOccurrencesValid(numOccurrencesString)
+}
+
+private fun isNumOccurrencesValid(numOccurrencesString: String): Boolean {
+    val numOccurrences = numOccurrencesString.toIntOrNull() ?: -1
+    return numOccurrences >= 1
 }
 
 @Preview(showBackground = true)
