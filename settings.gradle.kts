@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Everyday ToDo List"
+rootProject.name = "Forget-Me-Not Reminders"
 include(":app")
  
