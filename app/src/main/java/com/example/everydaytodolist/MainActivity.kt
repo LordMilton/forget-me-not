@@ -40,12 +40,6 @@ import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.io.File
 
 val Context.preferencesDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
-/* TODO Upgrade todo storage to protoDataStore
-val Context.todoDataStore: DataStore<Settings> by dataStore(
-    fileName = "settings.pb",
-    serializer = SettingsSerializer,
-)
- */
 
 class MainActivity : ComponentActivity() {
 
@@ -91,7 +85,7 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(1) { MidnightAlarm.createMidnightAlarms(context) }
                 LaunchedEffect(1) { finishedFirstRunAfterBoot() }
 
-                // No longer setting up notifications when app starts, instead happens when the todoObject is first created/edited, during midnight 'alarm', TODO on system boot
+                // No longer setting up notifications when app starts, instead happens when the todoObject is first created/edited, during midnight 'alarm', on reboot
 
                 val onNewTodoRequested =
                     {

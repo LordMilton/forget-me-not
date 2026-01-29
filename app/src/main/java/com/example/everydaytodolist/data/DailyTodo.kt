@@ -3,9 +3,6 @@ package com.example.everydaytodolist.data
 import java.time.LocalTime
 import java.util.Calendar
 import java.util.Date
-import kotlin.text.removeSurrounding
-import kotlin.text.toInt
-import kotlin.text.toLong
 
 class DailyTodo(
     override val title: String = ITodo.defaultName,
