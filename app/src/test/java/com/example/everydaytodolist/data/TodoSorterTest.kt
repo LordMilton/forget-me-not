@@ -1,5 +1,7 @@
 package com.example.everydaytodolist.data
 
+import com.example.everydaytodolist.data.todos.DailyTodo
+import com.example.everydaytodolist.data.todos.ITodo
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test

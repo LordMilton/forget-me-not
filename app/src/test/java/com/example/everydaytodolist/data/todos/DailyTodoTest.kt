@@ -1,9 +1,10 @@
-package com.example.everydaytodolist.data
+package com.example.everydaytodolist.data.todos
 
 import java.util.Calendar
 import org.junit.Assert.*
 import org.junit.Test
 import java.time.LocalTime
+import java.util.Date
 
 class DailyTodoTest {
 
@@ -219,8 +220,39 @@ class DailyTodoTest {
         assertNotEquals("Modifying copy's last occurrence should not change original's.", original.getLastOccurrence(), copy.getLastOccurrence())
     }
 
+    @Test
+    fun `test DailyTodo serialization and deserialization`() {
+        // Given a DailyTodo with specific values
+        val original = DailyTodo(
+            title = "Drink Water",
+            frequency = 1,
+            alarmTime = LocalTime.of(8, 0),
+            maxOccurrences = 30
+        )
+
+        // When converted to string and back through a properties map
+        val serializedString = original.toString()
+
+        // Helper logic to parse the toString() back into a map
+        val contents = serializedString.substringAfter("(").substringBeforeLast(")")
+        val propertyMap = contents.split(", ")
+            .map { it.split("=") }
+            .filter { it.size == 2 }
+            .associate { it[0] to it[1] }
+
+        val deserialized = DailyTodo().fromPropertiesMap(propertyMap)
+
+        // Then values should match the original
+        assertNotNull(deserialized)
+        assertEquals(original.title, deserialized?.title)
+        assertEquals(original.frequency, deserialized?.frequency)
+        assertEquals(original.alarmTime, deserialized?.alarmTime)
+        assertEquals(original.maxOccurrences, deserialized?.maxOccurrences)
+        assertEquals(original.uniqueId, deserialized?.uniqueId)
+    }
+
     // Helper function to convert Date to Calendar and get a field
-    private fun getCalendarField(date: java.util.Date, field: Int): Int {
+    private fun getCalendarField(date: Date, field: Int): Int {
         val cal = Calendar.getInstance()
         cal.time = date
         return cal.get(field)

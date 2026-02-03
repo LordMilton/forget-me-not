@@ -1,5 +1,6 @@
 package com.example.everydaytodolist.data
 
+import com.example.everydaytodolist.data.todos.ITodo
 import kotlin.collections.sortWith
 
 class TodoSorter {

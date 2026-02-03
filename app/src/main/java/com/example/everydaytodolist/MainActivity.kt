@@ -31,7 +31,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.everydaytodolist.alarms.MidnightAlarm
-import com.example.everydaytodolist.data.ITodo
+import com.example.everydaytodolist.data.todos.ITodo
 import com.example.everydaytodolist.data.TodoListUtil
 import com.example.everydaytodolist.data.TodoSorter
 import com.example.everydaytodolist.ui.screens.EditTaskComposable

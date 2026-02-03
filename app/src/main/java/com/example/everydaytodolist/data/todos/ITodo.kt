@@ -1,4 +1,4 @@
-package com.example.everydaytodolist.data
+package com.example.everydaytodolist.data.todos
 
 import java.time.LocalTime
 import java.util.Calendar

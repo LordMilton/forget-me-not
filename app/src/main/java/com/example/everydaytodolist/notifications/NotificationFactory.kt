@@ -9,7 +9,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import com.example.everydaytodolist.MainActivity
 import com.example.everydaytodolist.R
-import com.example.everydaytodolist.data.ITodo
+import com.example.everydaytodolist.data.todos.ITodo
 
 class NotificationFactory(
     private val context: Context

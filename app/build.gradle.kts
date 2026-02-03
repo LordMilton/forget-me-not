@@ -61,7 +61,6 @@ dependencies {
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore.preferences.core)
-    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.runtime)
     //implementation(libs.androidx.material3)
     testImplementation(libs.junit)

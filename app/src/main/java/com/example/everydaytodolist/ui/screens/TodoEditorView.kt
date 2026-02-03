@@ -57,8 +57,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import com.example.everydaytodolist.data.DailyTodo
-import com.example.everydaytodolist.data.ITodo
+import com.example.everydaytodolist.data.todos.DailyTodo
+import com.example.everydaytodolist.data.todos.ITodo
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter

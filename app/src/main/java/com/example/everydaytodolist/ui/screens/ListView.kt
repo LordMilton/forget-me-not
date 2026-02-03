@@ -36,8 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.everydaytodolist.R
-import com.example.everydaytodolist.data.DailyTodo
-import com.example.everydaytodolist.data.ITodo
+import com.example.everydaytodolist.data.todos.DailyTodo
+import com.example.everydaytodolist.data.todos.ITodo
 import com.example.everydaytodolist.data.TodoSorter
 import com.example.everydaytodolist.ui.components.ListItem
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme

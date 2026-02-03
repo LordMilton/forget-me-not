@@ -11,12 +11,14 @@ import android.net.Uri
 import androidx.core.app.ActivityCompat
 import androidx.core.net.toUri
 import com.example.everydaytodolist.createNotificationChannel
+import com.example.everydaytodolist.data.todos.DailyTodo
+import com.example.everydaytodolist.data.todos.ITodo
+import com.example.everydaytodolist.data.todos.WeeklyTodo
 import com.example.everydaytodolist.receivers.AlarmReceiver
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
-import java.time.LocalTime
 import java.util.Calendar
 
 class TodoListUtil {
@@ -59,6 +61,7 @@ class TodoListUtil {
                     // Create the TodoObject
                     val todo = when(todoTypeString) {
                         "Daily","" -> DailyTodo()
+                        "Weekly" -> WeeklyTodo()
                         else -> null
                     }?.fromPropertiesMap(propertyMap)
 
