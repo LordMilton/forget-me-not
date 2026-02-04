@@ -14,7 +14,8 @@ class WeeklyTodo(
     override val alarmTime: LocalTime = ITodo.defaultAlarmTime,
     override val uniqueId: Int = ITodo.getNextUniqueId(),
     override val maxOccurrences: Int? = null,
-    override val endDate: Calendar? = null
+    override val endDate: Calendar? = null,
+    private var now: Calendar = Calendar.getInstance()
 ): ITodo {
 
     constructor(
@@ -74,8 +75,7 @@ class WeeklyTodo(
     }
 
     private var lastOccurrence: Calendar = {
-        val calendar = Calendar.getInstance()
-        calendar.isLenient = true
+        val calendar = getNow()
         calendar.add(Calendar.DAY_OF_YEAR, -frequency) // Set lastOccurrence to yesterday to avoid it looking like it was completed today until explicitly marked as such
         calendar
     }()
@@ -97,13 +97,24 @@ class WeeklyTodo(
         return timesSnoozedSinceLastCompletion
     }
 
+    /**
+     * Manipulable "today" that lets us make testing consistent
+     * Outside of tests, this should not be manipulated
+     */
+    fun setNow(today: Calendar) {
+        this.now = today.clone() as Calendar
+        now.isLenient = true
+    }
+    fun getNow(): Calendar {
+        return now.clone() as Calendar
+    }
+
     override fun markCompleted(): Boolean {
         timesSnoozedSinceLastCompletion = 0
-        val lastLastOccurrence = Calendar.getInstance().apply {
+        val lastLastOccurrence = getNow().apply {
             timeInMillis = lastOccurrence.timeInMillis
         }
-        lastOccurrence = Calendar.getInstance()
-        lastOccurrence.isLenient = true
+        lastOccurrence = getNow()
         nextOccurrence = calculateNextOccurrence(
             from = lastOccurrence,
             latestOccurrenceWasEarlierWeek = lastLastOccurrence.get(Calendar.WEEK_OF_YEAR) < lastOccurrence.get(Calendar.WEEK_OF_YEAR)
@@ -130,14 +141,14 @@ class WeeklyTodo(
     }
 
     override fun dueToday(): Boolean {
-        val today = Calendar.getInstance()
+        val today = getNow()
         val dueToday = nextOccurrence.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR) &&
                 nextOccurrence.get(Calendar.YEAR) == today.get(Calendar.YEAR)
         return dueToday
     }
 
     override fun dueBeforeToday(): Boolean {
-        val midnightToday = Calendar.getInstance()
+        val midnightToday = getNow()
         midnightToday.apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
@@ -148,7 +159,7 @@ class WeeklyTodo(
     }
 
     override fun completedToday(): Boolean {
-        val today = Calendar.getInstance()
+        val today = getNow()
         return (today.get(Calendar.DAY_OF_YEAR) == lastOccurrence.get(Calendar.DAY_OF_YEAR) &&
                 today.get(Calendar.YEAR) == lastOccurrence.get(Calendar.YEAR))
     }
@@ -160,7 +171,7 @@ class WeeklyTodo(
     ): Calendar {
         var calendar = from.clone() as Calendar
         calendar.isLenient = true
-        val today = Calendar.getInstance().apply {
+        val today = getNow().apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
@@ -178,36 +189,46 @@ class WeeklyTodo(
             calendar = setCalendarToAlarmTime(calendar)
         }
         else { // Handle non-snoozing (probably completion)
-            val lastDayOfWeekDate = Calendar.getInstance().apply { set(Calendar.DAY_OF_WEEK, timeToCalendarDayOfWeek(daysOfWeek.last())) }
+            val lastDayOfWeekAsDate = getNow().apply { set(Calendar.DAY_OF_WEEK, timeToCalendarDayOfWeek(daysOfWeek.last())) }
 
             var weekCompleted = false
             // If we've run through the week, and frequency needs to come into play
-            if(latestOccurrenceWasEarlierWeek) {
+            if(latestOccurrenceWasEarlierWeek) { //If we ran through last week, but marked completed late
                 weekCompleted = true
                 calendar.set(Calendar.WEEK_OF_YEAR, from.get(Calendar.WEEK_OF_YEAR) + frequency-1)
             }
-            else if(today.get(Calendar.WEEK_OF_YEAR) == lastDayOfWeekDate.get(Calendar.WEEK_OF_YEAR)) {
+            else if(compareDay(from, lastDayOfWeekAsDate) >= 0) { //If we are marking the last occurrence of the week completed
                 weekCompleted = true
                 calendar.set(Calendar.WEEK_OF_YEAR, from.get(Calendar.WEEK_OF_YEAR) + frequency)
             }
             if(weekCompleted) {
                 calendar.set(Calendar.DAY_OF_WEEK, timeToCalendarDayOfWeek(daysOfWeek[0]))
-                // If the nextOccurrence ends up being in the past (e.g. frequency of one week),
-                // then bump it forward to today but stick with the next reasonable daysOfWeek
-                calendar.apply {
-                    set(Calendar.DAY_OF_WEEK, timeToCalendarDayOfWeek(getNextOccurringDayOfWeek(today.get(Calendar.DAY_OF_WEEK))))
-                    set(Calendar.YEAR, today.get(Calendar.YEAR))
-                    set(Calendar.WEEK_OF_YEAR, today.get(Calendar.WEEK_OF_YEAR))
-                }
-                if(today.after(calendar)) {
-                    calendar.add(Calendar.WEEK_OF_YEAR, 1)
+                // If the calculatedNextOccurrence ends up being before the date from which we're calculating (this can happen with a frequency of one week that's being completed late),
+                // then bump it forward to the from date but stick with the next reasonable daysOfWeek
+                if(compareDay(calendar, from) <= 0) {
+                    calendar.apply {
+                        set(
+                            Calendar.DAY_OF_WEEK,
+                            timeToCalendarDayOfWeek(getNextOccurringDayOfWeek(from.get(Calendar.DAY_OF_WEEK)))
+                        )
+                        set(Calendar.YEAR, from.get(Calendar.YEAR))
+                        set(Calendar.WEEK_OF_YEAR, from.get(Calendar.WEEK_OF_YEAR))
+                    }
+                    if (from.after(calendar)) {
+                        calendar.add(Calendar.WEEK_OF_YEAR, frequency)
+                    }
                 }
                 calendar = setCalendarToAlarmTime(calendar)
             }
             // If we're still going through the week
             else {
-                calendar.set(Calendar.DAY_OF_WEEK, timeToCalendarDayOfWeek(getNextOccurringDayOfWeek(today.get(Calendar.DAY_OF_WEEK))))
+                calendar.set(Calendar.DAY_OF_WEEK, timeToCalendarDayOfWeek(getNextOccurringDayOfWeek(from.get(Calendar.DAY_OF_WEEK))))
             }
+        }
+        // Special case, if I complete a task early, I want the next occurrence to actually bump instead of the task
+        // just showing back up on the same day in spite of me completing it
+        if(nextOccurrence != null && compareDay(calendar, nextOccurrence) <= 0) {
+            calendar = calculateNextOccurrence(from = nextOccurrence)
         }
         return calendar
     }
@@ -240,6 +261,22 @@ class WeeklyTodo(
         }
 
         return calendar
+    }
+
+    private fun compareDay(calendar1: Calendar, calendar2: Calendar): Int {
+        val calendar1Clone = (calendar1.clone() as Calendar).apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val calendar2Clone = (calendar2.clone() as Calendar).apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return calendar1Clone.compareTo(calendar2Clone)
     }
 
     //TODO Printing and reading of daysOfWeek
