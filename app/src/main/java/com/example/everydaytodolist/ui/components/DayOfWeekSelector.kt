@@ -15,13 +15,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.everydaytodolist.data.DayOfWeekUtil.Factory.timeToCalendarDayOfWeek
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Locale
 
 @Composable
 fun DayOfWeekSelector(
-    selectedDays: Set<DayOfWeek>,
+    selectedDays: List<DayOfWeek>,
     onDaySelected: (DayOfWeek) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -30,8 +31,8 @@ fun DayOfWeekSelector(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // iterates through all 7 days of the week
-        DayOfWeek.entries.forEach { day ->
+        val daysOfWeek = DayOfWeek.entries.sortedBy { timeToCalendarDayOfWeek(it) }
+        daysOfWeek.forEach { day ->
             val isSelected = selectedDays.contains(day)
 
             // Get the initial (e.g., "M", "T", "W")

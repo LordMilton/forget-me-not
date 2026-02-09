@@ -35,8 +35,10 @@ import androidx.compose.ui.unit.dp
 import com.example.everydaytodolist.R
 import com.example.everydaytodolist.data.todos.DailyTodo
 import com.example.everydaytodolist.data.todos.ITodo
+import com.example.everydaytodolist.data.todos.WeeklyTodo
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
 import com.example.everydaytodolist.ui.theme.ExtendedTheme
+import java.time.DayOfWeek
 import java.time.LocalTime
 
 @Composable
@@ -108,12 +110,32 @@ fun ListItem(
                             stringResource(R.string.frequency_single_occurrence)
                         }
                         else {
-                            when (data.frequency) {
-                                1 -> stringResource(R.string.frequency_one_day)
-                                else -> stringResource(
-                                    R.string.frequency_multiple_days,
-                                    data.frequency
-                                )
+                            when(data) {
+                                is DailyTodo ->
+                                    when (data.frequency) {
+                                        1 -> stringResource(R.string.frequency_one_day)
+                                        else -> stringResource(
+                                            R.string.frequency_multiple_days,
+                                            data.frequency
+                                        )
+                                    }
+                                is WeeklyTodo ->
+                                    when (data.frequency) {
+                                        1 -> stringResource(
+                                                R.string.frequency_one_week,
+                                                data.daysOfWeekToStringShort()
+                                            )
+                                        else -> stringResource(
+                                            R.string.frequency_multiple_weeks,
+                                            data.frequency,
+                                            data.daysOfWeekToStringShort()
+                                        )
+                                    }
+
+                                else -> {
+                                    println("ERROR: ListItem data did not have a handled type")
+                                    "ERROR: Data for this todo's frequency was bad"
+                                }
                             }
                         }
                     val nextOccurrenceString = DateFormat.getPatternInstance(DateFormat.MONTH_DAY)
@@ -230,6 +252,40 @@ fun ListItem(
 @Composable
 fun ListItemPreview() {
     val sampleData = DailyTodo("Clean Dishes", 1, LocalTime.of(9, 0))
+
+    EverydayToDoListTheme {
+        Surface() {
+            ListItem(sampleData, {}, {}, {}, {}, startExpanded = false, modifier = Modifier)
+        }
+    }
+}
+
+@Preview()
+@Composable
+fun ListItemWeeklyPreview() {
+    val sampleData = WeeklyTodo(
+        "Clean Dog",
+        2,
+        DayOfWeek.entries.toList(),
+        LocalTime.of(9, 0)
+    )
+
+    EverydayToDoListTheme {
+        Surface() {
+            ListItem(sampleData, {}, {}, {}, {}, startExpanded = false, modifier = Modifier)
+        }
+    }
+}
+
+@Preview()
+@Composable
+fun ListItemOnceWeeklyPreview() {
+    val sampleData = WeeklyTodo(
+        "Clean Dog",
+        2,
+        listOf(DayOfWeek.TUESDAY),
+        LocalTime.of(9, 0)
+    )
 
     EverydayToDoListTheme {
         Surface() {

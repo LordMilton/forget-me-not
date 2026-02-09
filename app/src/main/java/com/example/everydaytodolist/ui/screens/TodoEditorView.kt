@@ -44,9 +44,11 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -57,9 +59,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import com.example.everydaytodolist.data.DayOfWeekUtil.Factory.timeToCalendarDayOfWeek
 import com.example.everydaytodolist.data.todos.DailyTodo
 import com.example.everydaytodolist.data.todos.ITodo
+import com.example.everydaytodolist.data.todos.WeeklyTodo
+import com.example.everydaytodolist.ui.components.DayOfWeekSelector
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
+import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -91,8 +97,13 @@ fun EditTaskComposable(
     var showTimePicker by remember { mutableStateOf(false) }
     var repeating by remember { mutableStateOf((data?.maxOccurrences ?: 2) != 1) }
     
-    val frequencyOptions = listOf("Days"/*, "Weeks", "Months",*/)
-    var frequencyLengthSelection by remember { mutableStateOf(frequencyOptions[0]) }
+    val frequencyOptions = listOf("Days", "Weeks"/*, "Months",*/)
+    var frequencyLengthSelection by remember { mutableStateOf(
+        when(data) {
+            null, is DailyTodo -> frequencyOptions[0]
+            is WeeklyTodo -> frequencyOptions[1]
+            else -> frequencyOptions[0]
+        }) }
     var showFrequencyMenu by remember { mutableStateOf(false) }
 
     var startDate by remember { mutableStateOf(Calendar.getInstance()) }
@@ -101,6 +112,20 @@ fun EditTaskComposable(
         initialSelectedDateMillis = startDate.timeInMillis
     )
     val startDateScrollState = remember { ScrollState(0) }
+
+    val daysOfWeek = remember {
+        when(data) {
+            is WeeklyTodo -> data.daysOfWeek.toMutableStateList()
+            else -> mutableStateListOf(DayOfWeek.MONDAY)
+        }
+    }
+    val onDaySelected = { dayOfWeek: DayOfWeek ->
+        if(!daysOfWeek.remove(dayOfWeek))
+            daysOfWeek.add(dayOfWeek)
+    }
+    val daysOfWeekSort: (DayOfWeek) -> Int = { dayOfWeek ->
+        timeToCalendarDayOfWeek(dayOfWeek)
+    }
 
     var endSelector by remember{ mutableStateOf(
         if(data?.endDate != null) EndType.DATE
@@ -223,6 +248,12 @@ fun EditTaskComposable(
         }
 
         if(repeating) {
+            if(frequencyLengthSelection == frequencyOptions[1]) {
+                DayOfWeekSelector(
+                    selectedDays = daysOfWeek,
+                    onDaySelected = onDaySelected
+                )
+            }
             val fieldsModifier = Modifier.padding(start = 16.dp)
             Column {
                 Text(
@@ -376,44 +407,69 @@ fun EditTaskComposable(
                     var newTodo: ITodo? = null
                     when(editingNewTodo){
                         true -> {
-                            when(frequencyLengthSelection) {
-                                "Days" -> newTodo = DailyTodo(
-                                    title = taskName,
-                                    frequency = frequencyString.toInt(),
-                                    alarmTime = alarmTime,
-                                    maxOccurrences = maxOccurrences,
-                                    endDate = endDate,
-                                    nextOccurrence = Calendar.getInstance()
-                                        .apply { time = startDate.time }
-                                )
-                                else -> println("User selected a frequency length option that's not available??")
+                            when(repeating) {
+                                true ->
+                                    when (frequencyLengthSelection) {
+                                        "Days" -> newTodo = DailyTodo(
+                                            title = taskName,
+                                            frequency = frequencyString.toInt(),
+                                            alarmTime = alarmTime,
+                                            maxOccurrences = maxOccurrences,
+                                            endDate = endDate,
+                                            nextOccurrence = Calendar.getInstance()
+                                                .apply { time = startDate.time }
+                                        )
+                                        "Weeks" -> newTodo = WeeklyTodo(
+                                            title = taskName,
+                                            frequency = frequencyString.toInt(),
+                                            daysOfWeek = daysOfWeek.sortedBy(daysOfWeekSort),
+                                            alarmTime = alarmTime,
+                                            maxOccurrences = maxOccurrences,
+                                            endDate = endDate,
+                                            nextOccurrence = Calendar.getInstance()
+                                                .apply { time = startDate.time }
+                                        )
+
+                                        else -> println("User selected a frequency length option that's not available??")
+                                    }
+                                false ->
+                                    newTodo = DailyTodo(
+                                        title = taskName,
+                                        frequency = frequencyString.toInt(),
+                                        alarmTime = alarmTime,
+                                        maxOccurrences = 1,
+                                        endDate = null,
+                                        nextOccurrence = Calendar.getInstance()
+                                            .apply { time = startDate.time }
+                                    )
                             }
                         }
                         false -> {
                             when(repeating) {
-                                true -> newTodo = DailyTodo(
-                                        title = taskName,
-                                        frequency = frequencyString.toInt(),
-                                        alarmTime = alarmTime,
-                                        uniqueId = data.uniqueId,
-                                        maxOccurrences = maxOccurrences,
-                                        endDate = endDate,
-                                        nextOccurrence = Calendar.getInstance()
-                                            .apply { time = data.getNextOccurrence() },
-                                        lastOccurrence = Calendar.getInstance()
-                                            .apply { time = data.getLastOccurrence() },
-                                        timesSnoozedSinceLastCompletion = data.getTimesSnoozedSinceLastCompletion(),
-                                        numOccurrences = data.getNumOccurrences()
-                                    )
-
-                                false -> when (frequencyLengthSelection) {
-                                    "Days" -> newTodo = DailyTodo(
+                                true ->
+                                    when (frequencyLengthSelection) {
+                                        "Days" -> newTodo = DailyTodo(
                                             title = taskName,
                                             frequency = frequencyString.toInt(),
                                             alarmTime = alarmTime,
                                             uniqueId = data.uniqueId,
-                                            maxOccurrences = 1,
-                                            endDate = null,
+                                            maxOccurrences = maxOccurrences,
+                                            endDate = endDate,
+                                            nextOccurrence = Calendar.getInstance()
+                                                .apply { time = data.getNextOccurrence() },
+                                            lastOccurrence = Calendar.getInstance()
+                                                .apply { time = data.getLastOccurrence() },
+                                            timesSnoozedSinceLastCompletion = data.getTimesSnoozedSinceLastCompletion(),
+                                            numOccurrences = data.getNumOccurrences()
+                                        )
+                                        "Weeks" -> newTodo = WeeklyTodo(
+                                            title = taskName,
+                                            frequency = frequencyString.toInt(),
+                                            daysOfWeek = daysOfWeek.sortedBy(daysOfWeekSort),
+                                            alarmTime = alarmTime,
+                                            uniqueId = data.uniqueId,
+                                            maxOccurrences = maxOccurrences,
+                                            endDate = endDate,
                                             nextOccurrence = Calendar.getInstance()
                                                 .apply { time = data.getNextOccurrence() },
                                             lastOccurrence = Calendar.getInstance()
@@ -422,8 +478,22 @@ fun EditTaskComposable(
                                             numOccurrences = data.getNumOccurrences()
                                         )
 
-                                    else -> println("User selected a frequency length option that's not available??")
-                                }
+                                        else -> println("User selected a frequency length option that's not available??")
+                                    }
+                                false -> newTodo = DailyTodo(
+                                        title = taskName,
+                                        frequency = frequencyString.toInt(),
+                                        alarmTime = alarmTime,
+                                        uniqueId = data.uniqueId,
+                                        maxOccurrences = 1,
+                                        endDate = null,
+                                        nextOccurrence = Calendar.getInstance()
+                                            .apply { time = data.getNextOccurrence() },
+                                        lastOccurrence = Calendar.getInstance()
+                                            .apply { time = data.getLastOccurrence() },
+                                        timesSnoozedSinceLastCompletion = data.getTimesSnoozedSinceLastCompletion(),
+                                        numOccurrences = data.getNumOccurrences()
+                                    )
                             }
                         }
                     }
@@ -434,7 +504,8 @@ fun EditTaskComposable(
                     }
                 },
                 enabled = isFrequencyIrrelevantOrValid(repeating, frequencyString) &&
-                        isNumOccurrencesIrrelevantOrValid(repeating, endSelector, numOccurrencesString),
+                        isNumOccurrencesIrrelevantOrValid(repeating, endSelector, numOccurrencesString) &&
+                        isDaysOfWeekIrrelevantOrValid(repeating, frequencyString, daysOfWeek),
                 colors = buttonColors,
                 modifier = Modifier.padding(end = 8.dp)
             ) {
@@ -571,6 +642,14 @@ private fun isFrequencyValid(frequencyString: String): Boolean {
     return frequency >= 1
 }
 
+private fun isDaysOfWeekIrrelevantOrValid(isRepeating: Boolean, frequencyType: String, daysOfWeek: List<DayOfWeek>): Boolean {
+    return !isRepeating || !(frequencyType == "Weeks") || isDaysOfWeekValid(daysOfWeek)
+}
+
+private fun isDaysOfWeekValid(daysOfWeek: List<DayOfWeek>): Boolean {
+    return !daysOfWeek.isEmpty()
+}
+
 private fun isNumOccurrencesIrrelevantOrValid(isRepeating: Boolean, endType: EndType, numOccurrencesString: String): Boolean {
     return !isRepeating || endType != EndType.NUM_OCCURRENCES || isNumOccurrencesValid(numOccurrencesString)
 }
@@ -588,6 +667,29 @@ fun EditTaskComposablePreview() {
     var frequency by remember { mutableIntStateOf(1) }
     var time by remember { mutableStateOf(LocalTime.of(18, 0)) }
     val data = DailyTodo(taskName, frequency, time)
+
+    EverydayToDoListTheme {
+        Surface(
+            Modifier.background(color = MaterialTheme.colorScheme.background)
+        ) {
+            EditTaskComposable(
+                data = data,
+                {},
+                {},
+                Modifier
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 350)
+@Composable
+fun EditTaskComposableWeeklyPreview() {
+    val taskName by remember { mutableStateOf("Do Laundry") }
+    val frequency by remember { mutableIntStateOf(1) }
+    val daysOfWeek = remember { mutableStateListOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY) }
+    val time by remember { mutableStateOf(LocalTime.of(18, 0)) }
+    val data = WeeklyTodo(taskName, frequency, daysOfWeek, time)
 
     EverydayToDoListTheme {
         Surface(

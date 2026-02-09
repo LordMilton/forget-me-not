@@ -1,11 +1,14 @@
 package com.example.everydaytodolist.data.todos
 
+import androidx.compose.ui.util.fastJoinToString
 import com.example.everydaytodolist.data.DayOfWeekUtil.Factory.calendarToTimeDayOfWeek
 import com.example.everydaytodolist.data.DayOfWeekUtil.Factory.timeToCalendarDayOfWeek
 import java.time.DayOfWeek
 import java.time.LocalTime
+import java.time.format.TextStyle
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 
 class WeeklyTodo(
     override val title: String = ITodo.defaultName,
@@ -117,7 +120,8 @@ class WeeklyTodo(
         lastOccurrence = getNow()
         nextOccurrence = calculateNextOccurrence(
             from = lastOccurrence,
-            latestOccurrenceWasEarlierWeek = lastLastOccurrence.get(Calendar.WEEK_OF_YEAR) < lastOccurrence.get(Calendar.WEEK_OF_YEAR)
+            latestOccurrenceWasEarlierWeek = lastLastOccurrence.get(Calendar.WEEK_OF_YEAR) < lastOccurrence.get(Calendar.WEEK_OF_YEAR),
+            completedEarly = compareDay(getNow(), nextOccurrence) < 0
         )
         numOccurrences++
         if((maxOccurrences != null && numOccurrences >= maxOccurrences) ||
@@ -167,7 +171,8 @@ class WeeklyTodo(
     private fun calculateNextOccurrence(
         from: Calendar = lastOccurrence,
         snoozeLength: Int = -1,
-        latestOccurrenceWasEarlierWeek: Boolean = false
+        latestOccurrenceWasEarlierWeek: Boolean = false,
+        completedEarly: Boolean = false
     ): Calendar {
         var calendar = from.clone() as Calendar
         calendar.isLenient = true
@@ -193,7 +198,7 @@ class WeeklyTodo(
 
             var weekCompleted = false
             // If we've run through the week, and frequency needs to come into play
-            if(latestOccurrenceWasEarlierWeek) { //If we ran through last week, but marked completed late
+            if(latestOccurrenceWasEarlierWeek && !completedEarly) { //If we ran through last week, but marked completed late
                 weekCompleted = true
                 calendar.set(Calendar.WEEK_OF_YEAR, from.get(Calendar.WEEK_OF_YEAR) + frequency-1)
             }
@@ -227,6 +232,7 @@ class WeeklyTodo(
         }
         // Special case, if I complete a task early, I want the next occurrence to actually bump instead of the task
         // just showing back up on the same day in spite of me completing it
+        @Suppress("SENSELESS_COMPARISON") // Compiler confused about nextOccurrence != null, but it definitively prevents null pointer errors
         if(nextOccurrence != null && compareDay(calendar, nextOccurrence) <= 0) {
             calendar = calculateNextOccurrence(from = nextOccurrence)
         }
@@ -279,7 +285,12 @@ class WeeklyTodo(
         return calendar1Clone.compareTo(calendar2Clone)
     }
 
-    //TODO Printing and reading of daysOfWeek
+    fun daysOfWeekToStringShort(): String {
+        return daysOfWeek.sortedBy { timeToCalendarDayOfWeek(it) }.fastJoinToString() {
+            it.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.getDefault())
+        }
+    }
+
     override fun toString(): String {
         return "WeeklyTodo(title='$title', " +
                 "frequency=$frequency, " +
@@ -295,6 +306,7 @@ class WeeklyTodo(
                 ")"
     }
 
+    @Suppress("USELESS_CAST")
     override fun fromPropertiesMap(propertyMap: Map<String,String>): WeeklyTodo? {
         var parseIssue = false
 

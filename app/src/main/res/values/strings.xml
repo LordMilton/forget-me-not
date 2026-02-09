@@ -5,6 +5,8 @@
     <string name="frequency_single_occurrence">Occurs once</string>
     <string name="frequency_one_day">Occurs every day</string>
     <string name="frequency_multiple_days">Occurs every %d days</string>
+    <string name="frequency_one_week">Occurs every week on %s</string>
+    <string name="frequency_multiple_weeks">Occurs every %d weeks on %s</string>
 
     <string name="channel_id">Todo</string>
     <string name="channel_name">Todo</string>
