@@ -34,7 +34,7 @@ class TodoSorter {
         fun sort(todoList: MutableList<ITodo>, method: SortMethod, reversed: Boolean = false) {
             val comparator = when(method) {
                 SortMethod.DUE_DATE -> dueDateComparator
-                SortMethod.SNOOZE_COUNT -> snoozeComparator
+                SortMethod.SNOOZE_COUNT -> snoozeComparator.reversed()
                 SortMethod.CREATED_DATE -> createdComparator
                 SortMethod.TITLE_ALPHANUM -> titleComparator
             }
