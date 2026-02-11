@@ -3,37 +3,51 @@ package com.example.everydaytodolist
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat.getString
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.everydaytodolist.alarms.MidnightAlarm
-import com.example.everydaytodolist.data.todos.ITodo
 import com.example.everydaytodolist.data.TodoListUtil
 import com.example.everydaytodolist.data.TodoSorter
+import com.example.everydaytodolist.data.todos.ITodo
 import com.example.everydaytodolist.ui.screens.EditTaskComposable
 import com.example.everydaytodolist.ui.screens.ListView
 import com.example.everydaytodolist.ui.theme.EverydayToDoListTheme
@@ -79,6 +93,26 @@ class MainActivity : ComponentActivity() {
                 }
                 val wroteToFile = TodoListUtil.writeTodosToFile(todoList, File(context.filesDir, storageFilename))
                 if(!wroteToFile) println("Failed to write todos to persistent storage")
+
+                // Check if notifications are enabled (don't remember so this is updated if setting is changed)
+                var areNotificationsEnabled by remember {
+                    mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+                }
+                // Add a lifecycle observer to update the notification status on resume.
+                val lifecycleOwner = rememberUpdatedState(newValue = this as LifecycleOwner)
+                DisposableEffect(Unit) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) {
+                            areNotificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+                        }
+                    }
+                    val lifecycle = lifecycleOwner.value.lifecycle
+                    lifecycle.addObserver(observer)
+
+                    onDispose {
+                        lifecycle.removeObserver(observer)
+                    }
+                }
 
                 // Set up incomplete todos to rollover at midnight every night
                 // (Key is there to avoid recomposition)
@@ -151,8 +185,35 @@ class MainActivity : ComponentActivity() {
                 ) }
 
                 Scaffold(
-                    Modifier
-                        .background(color = MaterialTheme.colorScheme.background)
+                    topBar = {
+                        // Only show the redirect reminder if notifications are disabled
+                        if (!areNotificationsEnabled) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.errorContainer)
+                                    .padding(16.dp),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Enable notifications to receive task reminders",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                                Button(onClick = {
+                                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                    }
+                                    context.startActivity(intent)
+                                }) {
+                                    Text("Go to Settings")
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.background(color = MaterialTheme.colorScheme.background)
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,

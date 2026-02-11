@@ -26,11 +26,7 @@ class AlarmReceiver: BroadcastReceiver() {
 
     fun createTodoNotification(context: Context, job: Intent) {
         println("Received notification broadcast")
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
+        if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
             val todoId = job.data?.lastPathSegment?.toIntOrNull() ?: -1
             if (todoId >= 0) {
                 // Safe way to have the todolist filename be global? I don't think making it an app string constant is safe (bla bla, not supposed to be obvious what a storage file would be called)
