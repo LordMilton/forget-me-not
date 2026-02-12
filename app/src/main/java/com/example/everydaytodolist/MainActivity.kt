@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val storageFilename = this.resources.getString(R.string.todo_storage_file)
 
-        val initiatingIntent = getIntent()
+        val initiatingIntent = intent
         val focusedTodoId = initiatingIntent.data?.lastPathSegment?.toIntOrNull() ?: -1
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

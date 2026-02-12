@@ -1,5 +1,6 @@
 package com.example.everydaytodolist.ui.screens
 
+import android.content.res.Configuration
 import android.icu.text.SimpleDateFormat
 import java.util.TimeZone
 import androidx.compose.foundation.ScrollState
@@ -51,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
@@ -144,6 +146,8 @@ fun EditTaskComposable(
 
     val scrollState = remember { ScrollState(0) }
 
+    val textColor = MaterialTheme.colorScheme.onBackground
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -179,10 +183,11 @@ fun EditTaskComposable(
                 BasicText(
                     "Every",
                     style = MaterialTheme.typography.titleMedium,
-                    autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = MaterialTheme.typography.titleMedium.fontSize),
+                    color = ColorProducer { textColor },
+                    autoSize = TextAutoSize.StepBased(minFontSize = 11.sp, maxFontSize = MaterialTheme.typography.titleMedium.fontSize),
                     modifier = Modifier
                         .padding(top = 5.dp, end = 8.dp)
-                        .weight(.15F)
+                        .weight(.2F)
                 )
                 OutlinedTextField(
                     value = frequencyString,
@@ -190,7 +195,7 @@ fun EditTaskComposable(
                     label = { Text("Frequency") },
                     textStyle = MaterialTheme.typography.titleMedium,
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(.35F)
+                    modifier = Modifier.weight(.3F)
                 )
                 ExposedDropdownMenuBox(
                     expanded = showFrequencyMenu,
@@ -661,6 +666,7 @@ private fun isNumOccurrencesValid(numOccurrencesString: String): Boolean {
 
 @Preview(showBackground = true)
 @Preview(widthDp = 350)
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun EditTaskComposablePreview() {
     var taskName by remember { mutableStateOf("Do Laundry") }

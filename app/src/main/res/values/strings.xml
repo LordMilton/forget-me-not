@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Forget-Me-Not Reminders</string>
     <string name="todo_storage_file">storedTodoList</string>
+<!--    <string name="todo_storage_file">storedTestingTodoList</string> -->
 
     <string name="frequency_single_occurrence">Occurs once</string>
     <string name="frequency_one_day">Occurs every day</string>
