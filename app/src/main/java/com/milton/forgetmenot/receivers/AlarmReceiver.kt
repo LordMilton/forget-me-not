@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
 import com.milton.forgetmenot.R
 import com.milton.forgetmenot.data.TodoListUtil
+import com.milton.forgetmenot.data.todos.ITodo
 import com.milton.forgetmenot.getTodoFromListById
 import com.milton.forgetmenot.notifications.NotificationFactory
 import java.io.File
@@ -47,6 +48,20 @@ class AlarmReceiver: BroadcastReceiver() {
             TodoListUtil.readTodosFromFile(File(context.filesDir, context.resources.getString(R.string.todo_storage_file)))
                 ?: listOf()
         todoList = TodoListUtil.snoozeIncompleteTodosToToday(todoList)
+
+        if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            var snoozedToTodayList = mutableListOf<ITodo>()
+            todoList.forEach {
+                if (it.dueToday() && it.getTimesSnoozedSinceLastCompletion() > 0)
+                    snoozedToTodayList.add(it)
+            }
+            val notificationManager = NotificationManagerCompat.from(context)
+            val notificationFac = NotificationFactory(context)
+            val notification = notificationFac.createSnoozedReminder(snoozedToTodayList)
+            if(notification != null) {
+                notificationManager.notify(-50, notification)
+            }
+        }
 
         TodoListUtil.createNotificationAlarms(context, todoList)
 
