@@ -8,15 +8,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.everydaytodolist"
+    namespace = "com.milton.forgetmenot"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.everydaytodolist"
+        applicationId = "com.milton.forgetmenot"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "0.3.0"
+        versionName = "0.4.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
