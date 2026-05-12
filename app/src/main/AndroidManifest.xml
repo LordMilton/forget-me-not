@@ -12,12 +12,12 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/forget_me_nots"
         android:supportsRtl="true"
-        android:theme="@style/Theme.EverydayToDoList">
+        android:theme="@style/Theme.ForgetMeNot">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.EverydayToDoList">
+            android:theme="@style/Theme.ForgetMeNot">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
