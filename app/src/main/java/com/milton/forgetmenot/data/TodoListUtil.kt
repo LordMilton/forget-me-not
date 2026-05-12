@@ -23,6 +23,7 @@ import java.util.Calendar
 
 class TodoListUtil {
     companion object Factory {
+        val BASE_TODO_ID_URI = "content://todos".toUri()
 
         fun writeTodosToFile(todoList: List<ITodo>, file: File): Boolean {
             var success = true
@@ -85,29 +86,45 @@ class TodoListUtil {
             {
                 createNotificationChannel(context)
                 val alarmManager = context.getSystemService(ALARM_SERVICE) as AlarmManager
-                val baseTodoIdUri = "content://todos".toUri()
                 for (todo in todoList) {
-                    val todoIdUri =
-                        Uri.withAppendedPath(baseTodoIdUri, todo.uniqueId.toString())
-                    val notificationIntent = Intent(
-                        "Todo Notification",
-                        todoIdUri,
-                        context,
-                        AlarmReceiver::class.java
-                    )
-                    val pendingIntent = PendingIntent.getBroadcast(
-                        context,
-                        1,
-                        notificationIntent,
-                        PendingIntent.FLAG_IMMUTABLE
-                    )
-                    alarmManager.setAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        todo.getNextOccurrence().time,
-                        pendingIntent
-                    )
+                    createNotificationAlarm(context, todo, alarmManager)
                 }
             }
+        }
+
+        fun createNotificationAlarm(context: Context, todo: ITodo, alarmManager: AlarmManager = context.getSystemService(ALARM_SERVICE) as AlarmManager) {
+            val pendingIntent = createNotificationAlarmIntent(context, todo)
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                todo.getNextOccurrence().time,
+                pendingIntent
+            )
+        }
+
+        fun cancelNotificationAlarm(context: Context, todo: ITodo) {
+            val alarmManager = context.getSystemService(ALARM_SERVICE) as AlarmManager
+            val pendingIntent = createNotificationAlarmIntent(context, todo)
+            alarmManager.cancel(
+                pendingIntent
+            )
+        }
+
+        private fun createNotificationAlarmIntent(context: Context, todo: ITodo): PendingIntent {
+            val todoIdUri =
+                Uri.withAppendedPath(BASE_TODO_ID_URI, todo.uniqueId.toString())
+            val notificationIntent = Intent(
+                "Todo Notification",
+                todoIdUri,
+                context,
+                AlarmReceiver::class.java
+            )
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                1,
+                notificationIntent,
+                PendingIntent.FLAG_IMMUTABLE
+            )
+            return pendingIntent
         }
 
         fun snoozeIncompleteTodosToToday(todoList: List<ITodo>): List<ITodo> {

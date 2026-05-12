@@ -133,7 +133,7 @@ class MainActivity : ComponentActivity() {
                     { todoId: Int ->
                         val (index, todo) = getTodoFromListById(todoList, todoId)
                         if(todo != null) {
-                            todoList.removeAt(index)
+                            removeTodoByIndex(context, todoList, index)
                         } else {
                             println("Tried to delete a nonexistent todo with id $todoId")
                         }
@@ -142,11 +142,11 @@ class MainActivity : ComponentActivity() {
                     { todoId: Int ->
                         var (index, todo) = getTodoFromListById(todoList, todoId)
                         if(todo != null) {
-                            todoList.removeAt(index)
+                            removeTodoByIndex(context, todoList, index)
                             todo = todo.clone() as ITodo
                             val repeat = todo.markCompleted()
                             if(repeat) {
-                                todoList.add(index, todo)
+                                addTodo(context, todoList, todo, sortedBy)
                             }
                             TodoSorter.sort(todoList, sortedBy)
                         } else {
@@ -157,11 +157,10 @@ class MainActivity : ComponentActivity() {
                     { todoId: Int, snoozeLength: Int? ->
                         var (index, todo) = getTodoFromListById(todoList, todoId)
                         if(todo != null){
-                            todoList.removeAt(index)
+                            removeTodoByIndex(context, todoList, index)
                             todo = todo.clone() as ITodo
                             todo.snooze(snoozeLength ?: 1)
-                            todoList.add(index, todo)
-                            TodoSorter.sort(todoList, sortedBy)
+                            addTodo(context, todoList, todo, sortedBy)
                         } else {
                             println("Tried to snooze a nonexistent todo with id $todoId")
                         }
@@ -249,9 +248,7 @@ class MainActivity : ComponentActivity() {
                                     EditTaskComposable(
                                         null,
                                         {
-                                            todoList.add(it)
-                                            TodoSorter.sort(todoList, sortedBy)
-                                            TodoListUtil.createNotificationAlarms(context, listOf(it))
+                                            addTodo(context, todoList, it, sortedBy)
                                             navController.navigate("list_view")
                                         },
                                         onCancel = {
@@ -314,4 +311,20 @@ fun getTodoFromListById(todoList: List<ITodo>, id: Int): Pair<Int, ITodo?> {
         }
     }
     return Pair(-1, null)
+}
+
+fun removeTodoByIndex(context: Context, todoList: MutableList<ITodo>, index: Int): ITodo? {
+    var removedTodo: ITodo? = null
+    try {
+        removedTodo = todoList.removeAt(index)
+        TodoListUtil.cancelNotificationAlarm(context, removedTodo)
+    } catch (e: IndexOutOfBoundsException) {}
+
+    return removedTodo
+}
+
+fun addTodo(context: Context, todoList: MutableList<ITodo>, todo: ITodo, sortMethod: TodoSorter.SortMethod) {
+    todoList.add(todo)
+    TodoSorter.sort(todoList, sortMethod)
+    TodoListUtil.createNotificationAlarm(context, todo)
 }
